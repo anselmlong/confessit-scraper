@@ -390,7 +390,7 @@
         <tr>
           {% for h in range(12) %}
           <td class="hour-label">{{ "%02d"|format(h) }}</td>
-          <td style="background: rgba(0,61,124,{{ [hourly_dist.get(h, 0) / ([hourly_dist.values() | max, 1] | max), 0.9] | min }});">
+          <td style="background: rgba(0,61,124,{{ [hourly_dist.get(h, 0) / max_hourly, 0.9] | min }});">
             {{ hourly_dist.get(h, 0) }}
           </td>
           {% endfor %}
@@ -398,7 +398,7 @@
         <tr>
           {% for h in range(12, 24) %}
           <td class="hour-label">{{ "%02d"|format(h) }}</td>
-          <td style="background: rgba(0,61,124,{{ [hourly_dist.get(h, 0) / ([hourly_dist.values() | max, 1] | max), 0.9] | min }});">
+          <td style="background: rgba(0,61,124,{{ [hourly_dist.get(h, 0) / max_hourly, 0.9] | min }});">
             {{ hourly_dist.get(h, 0) }}
           </td>
           {% endfor %}

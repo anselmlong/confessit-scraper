@@ -78,6 +78,7 @@ def generate_daily_report(
 
     hourly_dist = stats.get("hourly_distribution", {})
     peak_hour = max(hourly_dist, key=hourly_dist.get) if hourly_dist else None
+    max_hourly = max(hourly_dist.values(), default=1) or 1
 
     template_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -97,6 +98,7 @@ def generate_daily_report(
         highlights=highlights,
         hourly_dist=hourly_dist,
         peak_hour=peak_hour,
+        max_hourly=max_hourly,
         charts=charts_b64,
         total_messages=len(messages),
     )
