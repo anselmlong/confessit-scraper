@@ -1,0 +1,8 @@
+.env
+sessions/
+data/*.db
+__pycache__/
+*.pyc
+.venv/
+reports/charts/
+*.egg-info/

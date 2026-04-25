@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NUSConfessIT Daily Digest — {{ report_date }}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f6f9;
+      color: #222;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 16px 48px;
+    }
+
+    /* Header */
+    header {
+      background: #003D7C;
+      color: #fff;
+      padding: 32px 24px 24px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; }
+    header .subtitle { margin-top: 6px; opacity: 0.8; font-size: 0.95rem; }
+    header .date-badge {
+      display: inline-block;
+      margin-top: 12px;
+      background: #EF7C00;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 4px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Sections */
+    section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      margin-top: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    section h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #003D7C;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #EF7C00;
+      display: inline-block;
+    }
+
+    /* TL;DR */
+    .tldr-list { list-style: none; }
+    .tldr-list li {
+      padding: 8px 0 8px 24px;
+      position: relative;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .tldr-list li:last-child { border-bottom: none; }
+    .tldr-list li::before {
+      content: "▶";
+      position: absolute;
+      left: 0;
+      color: #EF7C00;
+      font-size: 0.7rem;
+      top: 12px;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+    }
+    .stat-card {
+      background: #f8f9fb;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      border-left: 4px solid #003D7C;
+    }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #003D7C;
+    }
+    .stat-card .label {
+      font-size: 0.78rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Mood-o-meter */
+    .mood-bar-wrap { margin-top: 10px; }
+    .mood-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .mood-bar {
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+    }
+    .mood-bar .seg-pos { background: #4CAF50; }
+    .mood-bar .seg-neu { background: #9E9E9E; }
+    .mood-bar .seg-neg { background: #F44336; }
+    .mood-numbers {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      margin-top: 6px;
+    }
+    .mood-numbers span { font-weight: 600; }
+    .mood-numbers .pos { color: #4CAF50; }
+    .mood-numbers .neu { color: #888; }
+    .mood-numbers .neg { color: #F44336; }
+    .avg-score {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .avg-score strong { color: #003D7C; }
+    .chart-img { width: 100%; margin-top: 16px; border-radius: 8px; }
+
+    /* Topics */
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+    .topic-card {
+      background: #f8f9fb;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .topic-card .t-name {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .topic-card .t-count {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #EF7C00;
+    }
+    .topic-card.top-topic { border: 2px solid #EF7C00; }
+
+    /* Top words */
+    .word-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .word-chip {
+      background: #003D7C;
+      color: #fff;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .word-chip .chip-count {
+      background: #EF7C00;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    /* Highlights */
+    .highlight-card {
+      background: #f8f9fb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .highlight-card:first-child { margin-top: 0; }
+    .highlight-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      color: #EF7C00;
+      margin-bottom: 6px;
+    }
+    .highlight-text {
+      font-size: 0.9rem;
+      color: #333;
+      line-height: 1.5;
+    }
+    .highlight-meta {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    /* Heatmap table */
+    .heatmap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      margin-top: 8px;
+    }
+    .heatmap-table td {
+      padding: 4px 6px;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .heatmap-table .hour-label { color: #666; font-weight: 600; text-align: right; padding-right: 8px; }
+
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 0.78rem;
+      color: #aaa;
+    }
+
+    @media (max-width: 500px) {
+      header h1 { font-size: 1.4rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NUSConfessIT Daily Digest</h1>
+    <p class="subtitle">Your daily pulse on NUS anonymous confessions</p>
+    <span class="date-badge">{{ report_date }}</span>
+  </header>
+
+  <div class="container">
+
+    <!-- TL;DR -->
+    <section>
+      <h2>TL;DR</h2>
+      <ul class="tldr-list">
+        {% for bullet in tldr %}
+        <li>{{ bullet }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <!-- Numbers -->
+    <section>
+      <h2>By the Numbers</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value">{{ total_messages }}</div>
+          <div class="label">Confessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">{{ stats.get('total_views', 0) | int }}</div>
+          <div class="label">Total Views</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">{{ stats.get('avg_word_count', 0) }}</div>
+          <div class="label">Avg Words</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">{{ stats.get('avg_reactions', 0) }}</div>
+          <div class="label">Avg Reactions</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">{{ "%.0f"|format(stats.get('reply_rate', 0) * 100) }}%</div>
+          <div class="label">Reply Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">{{ stats.get('engagement_score', 0) }}</div>
+          <div class="label">Engagement</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mood-o-meter -->
+    <section>
+      <h2>Mood-o-Meter</h2>
+      <div class="mood-bar-wrap">
+        <div class="mood-label-row">
+          <span>Positive</span><span>Neutral</span><span>Negative</span>
+        </div>
+        <div class="mood-bar">
+          <div class="seg-pos" style="width: {{ sentiment_data.get('pct_positive', 0) }}%"></div>
+          <div class="seg-neu" style="width: {{ sentiment_data.get('pct_neutral', 0) }}%"></div>
+          <div class="seg-neg" style="width: {{ sentiment_data.get('pct_negative', 0) }}%"></div>
+        </div>
+        <div class="mood-numbers">
+          <span class="pos">{{ sentiment_data.get('pct_positive', 0) }}%</span>
+          <span class="neu">{{ sentiment_data.get('pct_neutral', 0) }}%</span>
+          <span class="neg">{{ sentiment_data.get('pct_negative', 0) }}%</span>
+        </div>
+      </div>
+      <div class="avg-score">
+        Average sentiment score: <strong>{{ sentiment_data.get('avg_compound', 0) }}</strong>
+        (−1 = very negative, +1 = very positive)
+      </div>
+      {% if charts.get('sentiment_pie') %}
+      <img class="chart-img" src="{{ charts['sentiment_pie'] }}" alt="Sentiment breakdown pie chart" />
+      {% endif %}
+    </section>
+
+    <!-- Topics -->
+    <section>
+      <h2>Hot Topics</h2>
+      <div class="topic-grid">
+        {% for topic, count in topic_counts.items() | sort(attribute='1', reverse=True) %}
+        <div class="topic-card {% if topic == top_topic %}top-topic{% endif %}">
+          <div class="t-name">{{ topic.replace('_', ' ').title() }}</div>
+          <div class="t-count">{{ count }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if charts.get('topics') %}
+      <img class="chart-img" src="{{ charts['topics'] }}" alt="Topic distribution chart" />
+      {% endif %}
+    </section>
+
+    <!-- Top Words -->
+    <section>
+      <h2>Top Words</h2>
+      {% if charts.get('wordcloud') %}
+      <img class="chart-img" src="{{ charts['wordcloud'] }}" alt="Word cloud" />
+      {% endif %}
+      <div class="word-chips" style="margin-top: 16px;">
+        {% for word, count in top_words %}
+        <span class="word-chip">{{ word }}<span class="chip-count">{{ count }}</span></span>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Highlights -->
+    {% if highlights %}
+    <section>
+      <h2>Highlights</h2>
+      {% for h in highlights %}
+      <div class="highlight-card">
+        <div class="highlight-label">{{ h.label }}</div>
+        <div class="highlight-text">{{ h.msg.get('text', '')[:400] }}{% if h.msg.get('text', '') | length > 400 %}…{% endif %}</div>
+        <div class="highlight-meta">
+          {{ h.msg.get('date', '')[:10] }} &middot;
+          {{ h.msg.get('views', 0) }} views &middot;
+          {{ h.msg.get('reactions_count', 0) }} reactions
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Time Heatmap -->
+    <section>
+      <h2>Posting Activity</h2>
+      {% if peak_hour is not none %}
+      <p style="margin-bottom:12px; font-size:0.9rem; color:#555;">
+        Peak posting hour: <strong style="color:#003D7C;">{{ "%02d:00"|format(peak_hour) }}–{{ "%02d:00"|format((peak_hour + 1) % 24) }}</strong>
+        ({{ hourly_dist.get(peak_hour, 0) }} posts)
+      </p>
+      {% endif %}
+      {% if charts.get('hourly') %}
+      <img class="chart-img" src="{{ charts['hourly'] }}" alt="Hourly activity chart" />
+      {% else %}
+      <table class="heatmap-table">
+        <tr>
+          {% for h in range(12) %}
+          <td class="hour-label">{{ "%02d"|format(h) }}</td>
+          <td style="background: rgba(0,61,124,{{ [hourly_dist.get(h, 0) / ([hourly_dist.values() | max, 1] | max), 0.9] | min }});">
+            {{ hourly_dist.get(h, 0) }}
+          </td>
+          {% endfor %}
+        </tr>
+        <tr>
+          {% for h in range(12, 24) %}
+          <td class="hour-label">{{ "%02d"|format(h) }}</td>
+          <td style="background: rgba(0,61,124,{{ [hourly_dist.get(h, 0) / ([hourly_dist.values() | max, 1] | max), 0.9] | min }});">
+            {{ hourly_dist.get(h, 0) }}
+          </td>
+          {% endfor %}
+        </tr>
+      </table>
+      {% endif %}
+    </section>
+
+  </div>
+
+  <footer>
+    Generated by NUSConfessIT Daily Digest &middot; Data from <a href="https://t.me/NUSConfessIT" style="color:#003D7C;">t.me/NUSConfessIT</a>
+  </footer>
+</body>
+</html>
