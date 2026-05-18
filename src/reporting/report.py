@@ -60,6 +60,8 @@ def generate_daily_report(
     top_words: list[tuple],
     stats: dict,
     chart_paths: dict,
+    llm_summary: str | None = None,
+    top_posts: list[dict] | None = None,
 ) -> str:
     tldr = _build_tldr(sentiment_data, topic_data)
 
@@ -101,4 +103,6 @@ def generate_daily_report(
         max_hourly=max_hourly,
         charts=charts_b64,
         total_messages=len(messages),
+        llm_summary=llm_summary,
+        top_posts=top_posts or [],
     )

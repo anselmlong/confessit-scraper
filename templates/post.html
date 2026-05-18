@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% set conf_label = ('#' ~ post.confession_id) if post.confession_id else ('ID ' ~ post.id) %}
+{% block title %}{{ post.title or 'Confession ' ~ conf_label }} — NUSConfessIT{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{{ post.title or 'Confession ' ~ conf_label }}</h1>
+  <p>
+    {{ post.date[:10] if post.date }}
+    &middot; {{ conf_label }}
+    {% if post.category and post.category != 'Others' %}&middot; {{ post.category }}{% endif %}
+  </p>
+</div>
+
+<div class="container">
+
+  <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
+    <a href="javascript:history.back()" style="text-decoration:none; color:#666; font-size:0.84rem;">← Back</a>
+    <a href="{{ tg_url }}" target="_blank" rel="noopener"
+       style="text-decoration:none; font-size:0.82rem; color:#003D7C; font-weight:600;
+              background:#e8f0fe; padding:5px 14px; border-radius:20px;">
+      View on Telegram ↗
+    </a>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="card" style="padding:16px 20px; margin-bottom:16px;">
+    <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center;">
+      <span style="font-size:1.1rem;">❤️ <strong>{{ post.reactions_count }}</strong></span>
+      <span style="font-size:1.1rem;">💬 <strong>{{ post.reply_count }}</strong></span>
+      <span style="font-size:1.1rem;">↗ <strong>{{ post.forwards }}</strong></span>
+      <span style="font-size:1.1rem;">👁 <strong>{{ "{:,}".format(post.views or 0) }}</strong></span>
+      <span class="score-tag" style="font-size:0.85rem; padding:4px 12px;">Score {{ post.score }}</span>
+    </div>
+  </div>
+
+  <!-- Full post text -->
+  <div class="card">
+    <div style="font-size:0.95rem; line-height:1.8; color:#222;">
+      {{ post.text | tgmd }}
+    </div>
+  </div>
+
+  <!-- Replies section -->
+  {% if post.reply_count > 0 %}
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+    <h2 style="font-size:0.85rem; font-weight:700; color:#003D7C; text-transform:uppercase; letter-spacing:0.8px; margin:0;">
+      {{ post.reply_count }} {{ 'Reply' if post.reply_count == 1 else 'Replies' }}
+      {% if replies %} ({{ replies|length }} stored){% endif %}
+    </h2>
+    <a href="{{ tg_url }}" target="_blank" rel="noopener"
+       style="font-size:0.82rem; color:#003D7C; font-weight:600; text-decoration:none;
+              background:#e8f0fe; padding:4px 14px; border-radius:20px;">
+      See all {{ post.reply_count }} on Telegram ↗
+    </a>
+  </div>
+
+  {% if replies %}
+  {% for r in replies %}
+  <div style="background:#fff; border-radius:8px; padding:14px 16px; margin-bottom:10px;
+              box-shadow:0 1px 3px rgba(0,0,0,0.06); border-left:3px solid #e0e0e0;">
+    <div style="font-size:0.88rem; line-height:1.7; color:#333;">
+      {{ r.text | tgmd }}
+    </div>
+    <div style="margin-top:8px; font-size:0.74rem; color:#bbb; display:flex; gap:12px;">
+      <span>{{ r.date[:10] if r.date }}</span>
+      {% if r.reactions_count %}<span>❤️ {{ r.reactions_count }}</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card">
+    <div style="text-align:center; padding:20px; color:#999; font-size:0.9rem;">
+      Replies are in the Telegram discussion thread —
+      <a href="{{ tg_url }}" target="_blank" rel="noopener" style="color:#003D7C; font-weight:600;">read them here ↗</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="card">
+    <div class="empty" style="padding:16px 0;">No replies on this post.</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

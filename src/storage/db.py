@@ -39,6 +39,8 @@ def init_db():
                 PRIMARY KEY (id, channel)
             )
         """)
+        # v2 migration: add structured confession fields
+        _migrate_v2(conn)
         conn.commit()
         conn.close()
         log.debug("Database initialised at %s", DB_PATH)
@@ -47,6 +49,21 @@ def init_db():
             f"Failed to initialise database at {DB_PATH}: {e}\n"
             "Check that the data/ directory is writable."
         ) from e
+
+
+def _migrate_v2(conn: sqlite3.Connection):
+    """Add structured confession columns (idempotent)."""
+    for col, col_type in [
+        ("category", "TEXT"),
+        ("confession_id", "TEXT"),
+        ("title", "TEXT"),
+        ("content", "TEXT"),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE messages ADD COLUMN {col} {col_type}")
+            log.info("Migration: added column %s to messages", col)
+        except sqlite3.OperationalError:
+            pass  # column already exists
 
 
 def save_messages(messages: list[dict], channel: str = "NUSConfessIT") -> int:
@@ -59,19 +76,25 @@ def save_messages(messages: list[dict], channel: str = "NUSConfessIT") -> int:
         for msg in messages:
             cursor = conn.execute("""
                 INSERT INTO messages (id, channel, date, text, views, forwards, reactions_count,
-                    reply_count, is_reply, reply_to_msg_id, word_count, char_count, scraped_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    reply_count, is_reply, reply_to_msg_id, word_count, char_count, scraped_at,
+                    category, confession_id, title, content)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id, channel) DO UPDATE SET
                     views=excluded.views,
                     forwards=excluded.forwards,
                     reactions_count=excluded.reactions_count,
                     reply_count=excluded.reply_count,
-                    scraped_at=excluded.scraped_at
+                    scraped_at=excluded.scraped_at,
+                    category=excluded.category,
+                    confession_id=excluded.confession_id,
+                    title=excluded.title,
+                    content=excluded.content
             """, (
                 msg["id"], channel, msg.get("date"), msg.get("text"),
                 msg.get("views", 0), msg.get("forwards", 0), msg.get("reactions_count", 0),
                 msg.get("reply_count", 0), msg.get("is_reply", False), msg.get("reply_to_msg_id"),
                 msg.get("word_count", 0), msg.get("char_count", 0), now,
+                msg.get("category"), msg.get("confession_id"), msg.get("title"), msg.get("content"),
             ))
             inserted += cursor.rowcount
         conn.commit()

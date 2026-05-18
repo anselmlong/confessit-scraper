@@ -259,6 +259,16 @@
 
   <div class="container">
 
+    <!-- LLM Summary -->
+    {% if llm_summary %}
+    <section style="background: linear-gradient(135deg, #003D7C, #00509E); color: #fff;">
+      <h2 style="color: #EF7C00; border-color: #EF7C00;">AI Vibe Check</h2>
+      <div style="font-size: 0.92rem; line-height: 1.7;">
+        {{ llm_summary | replace('\n', '<br>') | safe }}
+      </div>
+    </section>
+    {% endif %}
+
     <!-- TL;DR -->
     <section>
       <h2>TL;DR</h2>
@@ -368,6 +378,27 @@
           {{ h.msg.get('date', '')[:10] }} &middot;
           {{ h.msg.get('views', 0) }} views &middot;
           {{ h.msg.get('reactions_count', 0) }} reactions
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Top Posts by Reactions -->
+    {% if top_posts %}
+    <section>
+      <h2>🔥 Top Posts</h2>
+      {% for post in top_posts %}
+      <div class="highlight-card" style="border-left: 3px solid #EF7C00;">
+        <div class="highlight-label">#{{ loop.index }} &middot; {{ post.get('reactions_count', 0) }} reactions &middot; {{ post.get('views', 0) }} views</div>
+        {% if post.get('title') %}
+        <div class="highlight-text" style="font-weight: 600; margin-bottom: 4px;">{{ post.get('title', '')[:100] }}</div>
+        {% endif %}
+        <div class="highlight-text">{{ (post.get('content') or post.get('clean_text') or post.get('text', ''))[:300] }}{% if (post.get('content') or post.get('text', '')) | length > 300 %}&hellip;{% endif %}</div>
+        <div class="highlight-meta">
+          {% if post.get('category') %}{{ post.get('category') }} &middot; {% endif %}
+          {% if post.get('confession_id') %}#{{ post.get('confession_id') }} &middot; {% endif %}
+          {{ post.get('date', '')[:10] }}
         </div>
       </div>
       {% endfor %}

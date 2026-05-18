@@ -5,5 +5,11 @@ __pycache__/
 *.pyc
 .venv/
 reports/charts/
+reports/*_digest.html
+reports/top_all.html
+reports/top_week.html
+reports/top_month.html
+reports/top_year.html
 logs/
 *.egg-info/
+venv/

@@ -20,8 +20,9 @@ from src.analysis.sentiment import (
     aggregate_sentiment,
     categorize_topics,
 )
-from src.analysis.stats import compute_daily_stats
+from src.analysis.stats import compute_daily_stats, top_engaged_messages
 from src.analysis.visualizations import generate_all_charts
+from src.analysis.llm_summarizer import summarize_day
 from src.reporting.report import generate_daily_report
 
 console = Console()
@@ -154,6 +155,12 @@ Examples:
         top_words = get_top_words(daily, top_n=20)
         stats = compute_daily_stats(daily)
 
+        status.update("[bold]Generating LLM summary...")
+        llm_summary = summarize_day(daily)
+
+        status.update("[bold]Ranking top posts...")
+        top_posts = top_engaged_messages(daily, top_n=5)
+
         chart_paths = {}
         if not args.no_charts:
             status.update("[bold]Generating charts...")
@@ -177,6 +184,8 @@ Examples:
                 top_words,
                 stats,
                 chart_paths,
+                llm_summary=llm_summary,
+                top_posts=top_posts,
             )
         except Exception as e:
             log.exception("Report rendering failed")

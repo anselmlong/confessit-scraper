@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Overview — NUSConfessIT Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Overview</h1>
+  <p>{{ stats.first_date }} → {{ stats.last_date }} &middot; {{ "{:,}".format(stats.total) }} confessions</p>
+</div>
+<div class="container">
+
+  <div class="card">
+    <h2>All-Time Stats</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="val">{{ "{:,}".format(stats.total) }}</div><div class="lbl">Total Posts</div></div>
+      <div class="stat"><div class="val">{{ "{:,}".format(stats.total_views) }}</div><div class="lbl">Total Views</div></div>
+      <div class="stat"><div class="val">{{ stats.avg_reactions }}</div><div class="lbl">Avg Reactions</div></div>
+      <div class="stat"><div class="val">{{ stats.avg_words }}</div><div class="lbl">Avg Words</div></div>
+      <div class="stat"><div class="val">{{ stats.max_reactions }}</div><div class="lbl">Most Reactions</div></div>
+      <div class="stat"><div class="val">{{ stats.days_active }}</div><div class="lbl">Days Active</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Posts Per Month</h2>
+    <div class="bar-chart">
+      {% for month, count in monthly %}
+      <div class="bar-row">
+        <span class="bar-label">{{ month }}</span>
+        <div class="bar-fill" style="width: {{ [count / max_monthly * 500, 500] | min }}px"></div>
+        <span class="bar-val">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Top Posts This Week</h2>
+    {% for p in top_week %}
+    <a href="/post/{{ p.id }}" style="text-decoration:none; color:inherit; display:block;">
+    <div class="confession-card">
+      <div class="rank-num rank-{{ loop.index if loop.index <= 3 else 'x' }}" style="{{ '' if loop.index <= 3 else 'background:#003D7C' }}">{{ loop.index }}</div>
+      <div class="c-body">
+        {% if p.title %}<div class="c-title">{{ p.title }}</div>{% endif %}
+        <div class="c-text">{{ p.excerpt }}</div>
+        <div class="c-meta">
+          <span class="score-tag">Score {{ p.score }}</span>
+          {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
+          <span>❤️ {{ p.reactions_count }}</span>
+          <span>💬 {{ p.reply_count }}</span>
+          <span>↗ {{ p.forwards }}</span>
+          <span>{{ p.date[:10] }}</span>
+        </div>
+      </div>
+    </div>
+    </a>
+    {% else %}
+    <div class="empty">No posts this week yet.</div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

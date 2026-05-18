@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NUSConfessIT{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f9; color: #222; line-height: 1.6; }
+
+    nav {
+      background: #003D7C;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    nav .brand { color: #fff; font-weight: 800; font-size: 1rem; padding: 14px 24px 14px 0; border-right: 1px solid rgba(255,255,255,0.15); margin-right: 8px; letter-spacing: -0.3px; }
+    nav .brand span { color: #EF7C00; }
+    nav a { color: rgba(255,255,255,0.75); text-decoration: none; padding: 14px 16px; font-size: 0.88rem; font-weight: 500; transition: color 0.15s; }
+    nav a:hover, nav a.active { color: #fff; }
+    nav a.active { border-bottom: 3px solid #EF7C00; }
+    nav .spacer { flex: 1; }
+    nav .nav-badge { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #003D7C 0%, #00509E 100%);
+      color: #fff;
+      padding: 36px 24px 28px;
+    }
+    .page-header h1 { font-size: 1.6rem; font-weight: 700; }
+    .page-header p { opacity: 0.8; margin-top: 4px; font-size: 0.92rem; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+
+    .card { background: #fff; border-radius: 10px; padding: 22px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 20px; }
+    .card h2 { font-size: 0.85rem; font-weight: 700; color: #003D7C; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #EF7C00; display: inline-block; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+    .stat { background: #f8f9fb; border-radius: 8px; padding: 18px; text-align: center; border-left: 4px solid #003D7C; }
+    .stat .val { font-size: 2rem; font-weight: 800; color: #003D7C; }
+    .stat .lbl { font-size: 0.72rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+    .confession-card {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: box-shadow 0.15s;
+    }
+    .confession-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.09); }
+    .rank-num { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; color: #fff; background: #003D7C; }
+    .rank-1 { background: #FFD700; color: #333; }
+    .rank-2 { background: #C0C0C0; color: #333; }
+    .rank-3 { background: #CD7F32; }
+    .c-body { flex: 1; min-width: 0; }
+    .c-title { font-weight: 700; color: #003D7C; font-size: 0.92rem; margin-bottom: 4px; }
+    .c-text { font-size: 0.88rem; color: #444; line-height: 1.55; }
+    .c-meta { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 0.75rem; color: #999; align-items: center; }
+    .score-tag { background: #EF7C00; color: #fff; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; }
+    .cat-tag { background: #e8f0fe; color: #003D7C; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+    .range-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .range-tabs a { text-decoration: none; padding: 6px 18px; border-radius: 20px; font-size: 0.84rem; font-weight: 600; color: #555; border: 1.5px solid #ddd; transition: all 0.15s; }
+    .range-tabs a:hover { border-color: #003D7C; color: #003D7C; }
+    .range-tabs a.active { background: #003D7C; color: #fff; border-color: #003D7C; }
+
+    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-bar input { flex: 1; padding: 10px 16px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.92rem; outline: none; transition: border-color 0.15s; }
+    .search-bar input:focus { border-color: #003D7C; }
+    .search-bar button { background: #003D7C; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.88rem; }
+    .search-bar button:hover { background: #00509E; }
+
+    .bar-chart { margin-top: 8px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.78rem; }
+    .bar-label { width: 60px; text-align: right; color: #666; flex-shrink: 0; }
+    .bar-fill { height: 20px; background: #003D7C; border-radius: 3px; min-width: 2px; transition: width 0.3s; }
+    .bar-val { color: #555; width: 50px; }
+
+    .empty { text-align: center; padding: 40px; color: #aaa; font-size: 0.92rem; }
+    mark { background: #fff3cc; border-radius: 2px; padding: 0 2px; }
+
+    footer { text-align: center; padding: 24px; font-size: 0.75rem; color: #bbb; }
+    @media (max-width: 500px) { .stat-grid { grid-template-columns: repeat(2,1fr); } nav .brand { font-size: 0.88rem; } }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="brand">NUSConfessIT <span>Dashboard</span></div>
+  <a href="/" class="{{ 'active' if active_page == 'home' }}">Overview</a>
+  <a href="/top" class="{{ 'active' if active_page == 'top' }}">Top Posts</a>
+  <a href="/search" class="{{ 'active' if active_page == 'search' }}">Search</a>
+  <div class="spacer"></div>
+  <span class="nav-badge">72,066 posts</span>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer>NUSConfessIT Dashboard &middot; Data from <a href="https://t.me/NUSConfessIT" style="color:#003D7C;">t.me/NUSConfessIT</a></footer>
+</body>
+</html>

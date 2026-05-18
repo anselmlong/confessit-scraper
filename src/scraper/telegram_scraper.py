@@ -63,70 +63,66 @@ async def _scrape_channel_async(
     messages = []
 
     try:
-        async with client:
-            try:
-                await client.start(phone=PHONE)
-            except PhoneNumberInvalidError:
-                raise ValueError(
-                    f"Phone number {PHONE!r} is invalid. "
-                    "Set TELEGRAM_PHONE in .env in international format, e.g. +6512345678"
-                )
-            except SessionPasswordNeededError:
+        await client.connect()
+        try:
+            if not await client.is_user_authorized():
                 raise RuntimeError(
-                    "Your Telegram account has two-step verification enabled. "
-                    "Delete sessions/nusScraper.session and re-run to enter your password."
+                    "Not logged in to Telegram.\n"
+                    "Run  python auth.py  once to complete sign-in, then retry."
                 )
-            except AuthKeyError:
-                raise RuntimeError(
-                    "Telegram auth key is invalid or expired. "
-                    "Delete sessions/nusScraper.session and re-run to log in again."
-                )
+        except AuthKeyError:
+            raise RuntimeError(
+                "Telegram auth key is invalid or expired.\n"
+                "Delete sessions/nusScraper.session, run  python auth.py  to log in again."
+            )
 
-            log.info("Connected. Fetching messages from %s (since_id=%d)...", channel_url, since_id)
+        log.info("Connected. Fetching messages from %s (since_id=%d)...", channel_url, since_id)
 
-            try:
-                async for msg in client.iter_messages(channel_url, limit=limit, min_id=since_id):
-                    if not msg.text:
-                        continue
+        try:
+            async for msg in client.iter_messages(channel_url, limit=limit, min_id=since_id):
+                if not msg.text:
+                    continue
 
-                    messages.append({
-                        "id": msg.id,
-                        "date": msg.date.isoformat(),
-                        "text": msg.text,
-                        "views": msg.views or 0,
-                        "forwards": msg.forwards or 0,
-                        "reactions_count": _count_reactions(msg),
-                        "reply_count": msg.replies.replies if msg.replies else 0,
-                        "is_reply": msg.reply_to is not None,
-                        "reply_to_msg_id": msg.reply_to.reply_to_msg_id if msg.reply_to else None,
-                    })
+                messages.append({
+                    "id": msg.id,
+                    "date": msg.date.isoformat(),
+                    "text": msg.text,
+                    "views": msg.views or 0,
+                    "forwards": msg.forwards or 0,
+                    "reactions_count": _count_reactions(msg),
+                    "reply_count": msg.replies.replies if msg.replies else 0,
+                    "is_reply": msg.reply_to is not None,
+                    "reply_to_msg_id": msg.reply_to.reply_to_msg_id if msg.reply_to else None,
+                })
 
-                    if len(messages) % 100 == 0:
-                        log.debug("Fetched %d messages so far...", len(messages))
+                if len(messages) % 100 == 0:
+                    log.debug("Fetched %d messages so far...", len(messages))
 
-                    if progress_callback:
-                        progress_callback(len(messages))
+                if progress_callback:
+                    progress_callback(len(messages))
 
-                    await asyncio.sleep(0.05)
+                await asyncio.sleep(0.05)
 
-            except FloodWaitError as e:
-                log.warning("Telegram rate limit hit — waiting %d seconds before retrying...", e.seconds)
-                for remaining in range(e.seconds, 0, -5):
-                    log.debug("Flood wait: %d seconds remaining", remaining)
-                    await asyncio.sleep(min(5, remaining))
-                log.info("Retrying after flood wait. %d messages collected so far.", len(messages))
+        except FloodWaitError as e:
+            log.warning("Telegram rate limit hit — waiting %d seconds before retrying...", e.seconds)
+            for remaining in range(e.seconds, 0, -5):
+                log.debug("Flood wait: %d seconds remaining", remaining)
+                await asyncio.sleep(min(5, remaining))
+            log.info("Retrying after flood wait. %d messages collected so far.", len(messages))
 
-            except UsernameInvalidError:
-                raise ValueError(
-                    f"Channel not found: {channel_url!r}\n"
-                    "Check that the channel URL is correct and publicly accessible."
-                )
+        except UsernameInvalidError:
+            raise ValueError(
+                f"Channel not found: {channel_url!r}\n"
+                "Check that the channel URL is correct and publicly accessible."
+            )
 
     except (ConnectionError, OSError) as e:
         raise RuntimeError(
             f"Network error while connecting to Telegram: {e}\n"
             "Check your internet connection and try again."
         ) from e
+    finally:
+        await client.disconnect()
 
     log.info("Scrape complete: %d messages fetched.", len(messages))
     return messages

@@ -1,0 +1,1 @@
+from src.parsing.parser import parse_confession, parse_batch

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Search — NUSConfessIT Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Search Confessions</h1>
+  <p>Full-text search across {{ "{:,}".format(total_posts) }} confessions</p>
+</div>
+<div class="container">
+  <div class="card">
+    <form method="get" action="/search">
+      <div class="search-bar">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search confessions… e.g. 'relationship', 'CS2030', 'internship'" autofocus />
+        <button type="submit">Search</button>
+      </div>
+    </form>
+
+    {% if q %}
+      {% if results %}
+      <p style="font-size:0.82rem; color:#888; margin-bottom:16px;">{{ "{:,}".format(results|length) }} results for <strong>"{{ q }}"</strong></p>
+      {% for p in results %}
+      <a href="/post/{{ p.id }}" style="text-decoration:none; color:inherit; display:block;">
+      <div class="confession-card">
+        <div class="c-body">
+          {% if p.title %}<div class="c-title">{{ p.title | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}</div>{% endif %}
+          <div class="c-text">{{ p.excerpt | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}</div>
+          <div class="c-meta">
+            <span class="score-tag">Score {{ p.score }}</span>
+            {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
+            <span>❤️ {{ p.reactions_count }}</span>
+            <span>💬 {{ p.reply_count }}</span>
+            <span>↗ {{ p.forwards }}</span>
+            <span>{{ p.date[:10] }}</span>
+          </div>
+        </div>
+      </div>
+      </a>
+      {% endfor %}
+      {% else %}
+      <div class="empty">No results found for "{{ q }}".</div>
+      {% endif %}
+    {% else %}
+      <div class="empty" style="padding: 20px 0 0;">Enter a search term above to find confessions.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

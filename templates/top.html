@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Top Posts — NUSConfessIT Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Top Confessions</h1>
+  <p>Ranked by score = reactions × 3 + replies × 2 + forwards</p>
+</div>
+<div class="container">
+  <div class="range-tabs">
+    <a href="/top?range=week&n={{ n }}" class="{{ 'active' if range_key == 'week' }}">This Week</a>
+    <a href="/top?range=month&n={{ n }}" class="{{ 'active' if range_key == 'month' }}">This Month</a>
+    <a href="/top?range=year&n={{ n }}" class="{{ 'active' if range_key == 'year' }}">This Year</a>
+    <a href="/top?range=all&n={{ n }}" class="{{ 'active' if range_key == 'all' }}">All Time</a>
+  </div>
+
+  <div class="card" style="padding: 14px 20px; margin-bottom: 16px; display:flex; gap:20px; flex-wrap:wrap; align-items:center;">
+    <span style="font-size:0.82rem; color:#666;">Showing top <strong>{{ n }}</strong> of <strong>{{ "{:,}".format(total) }}</strong> posts</span>
+    <span style="font-size:0.82rem; color:#666;">&middot; Best score: <strong style="color:#EF7C00;">{{ posts[0].score if posts else 0 }}</strong></span>
+    <div style="margin-left:auto; display:flex; gap:6px;">
+      <a href="/top?range={{ range_key }}&n=25" style="text-decoration:none; font-size:0.78rem; padding:4px 12px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 25 }}">25</a>
+      <a href="/top?range={{ range_key }}&n=50" style="text-decoration:none; font-size:0.78rem; padding:4px 12px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 50 }}">50</a>
+      <a href="/top?range={{ range_key }}&n=100" style="text-decoration:none; font-size:0.78rem; padding:4px 12px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 100 }}">100</a>
+    </div>
+  </div>
+
+  <div class="card">
+    {% for p in posts %}
+    <a href="/post/{{ p.id }}" style="text-decoration:none; color:inherit; display:block;">
+    <div class="confession-card">
+      <div class="rank-num {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">{{ loop.index }}</div>
+      <div class="c-body">
+        {% if p.title %}<div class="c-title">{{ p.title }}</div>{% endif %}
+        <div class="c-text">{{ p.excerpt }}</div>
+        <div class="c-meta">
+          <span class="score-tag">Score {{ p.score }}</span>
+          {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
+          <span>❤️ {{ p.reactions_count }}</span>
+          <span>💬 {{ p.reply_count }}</span>
+          <span>↗ {{ p.forwards }}</span>
+          <span>👁 {{ "{:,}".format(p.views or 0) }}</span>
+          <span>{{ p.date[:10] }}</span>
+          {% if p.confession_id %}<span style="color:#bbb;">#{{ p.confession_id }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    </a>
+    {% else %}
+    <div class="empty">No posts found for this range.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

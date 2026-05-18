@@ -1,84 +1,92 @@
 HANDOFF CONTEXT
 ===============
 
-USER REQUESTS (AS-IS)
----------------------
-- "can you render the html file as a local host instead of showing it to the user as just a html file?"
-- "INTEGRATE THIS SERVER INTO THE REPORT.PY COMMAND"
-- "i want better parsing of the confessions, and better analysis also. perhaps run through a LLM to summarise as well? i want a way to do something with the data, perhaps even fine tuning an LLM in the future..."
-- "A" (chose Option A - integrated roadmap for parsing → analysis → LLM summarization → fine-tuning prep)
-- "yeah lets do option 1 first" (structured parsing, top posts ranking, LLM summary)
-- "instead of returning a html file, we can just create a web app that displays it?"
-- "dashboard. let's just do fastapi, next.js standard stuff. use /impeccable to design"
-- "show me visual? but actually maybe a more fun direction would be great too"
-- User provided OpenAI API key (stored in ~/.gstack/openai.json for security)
+PROJECT
+-------
+confessit-scraper — scrapes t.me/NUSConfessIT, stores in SQLite, generates daily HTML reports with sentiment analysis, topic classification, and LLM summaries.
 
-GOAL
-----
-Build an enhanced NUSConfessIT dashboard web app (FastAPI + Next.js) with structured confession parsing, top posts ranking by reactions, LLM-powered summaries, and a fun campus-vibe design.
+LOCATION
+--------
+/home/ubuntu/confessit-scraper
+Python venv: /home/ubuntu/confessit-scraper/venv
 
-WORK COMPLETED
---------------
-- Added local HTTP server to report.py with --serve and --open flags
-- Created design spec: docs/superpowers/specs/2026-04-26-enhanced-parsing-design.md
-- Explored existing codebase structure (scraper, storage, analysis, reporting modules)
-- Researched dashboard design trends for 2025
-- Proposed fun design directions: Campus Feed (Instagram-style), NUS Radio, Confession Booth
-- Saved OpenAI API key securely to ~/.gstack/openai.json
-
-CURRENT STATE
+WHAT WAS DONE
 -------------
-- API key needs organization verification on OpenAI before AI design generation works
-- Design exploration was interrupted - no visual mockups generated yet
-- Existing codebase: Python scraper → SQLite → daily HTML reports
+1. Database migration — added 4 columns to messages table:
+   - category TEXT, confession_id TEXT, title TEXT, content TEXT
+   - migration is idempotent (handled in db.py _migrate_v2)
 
-PENDING TASKS
+2. Parser module — src/parsing/parser.py
+   - parse_confession(text) → extracts category, confession_id, title, content
+   - parse_batch(messages) → processes list of messages in-place
+   - Regex-based, handles emojis, markdown formatting, missing fields
+
+3. LLM summarizer — src/analysis/llm_summarizer.py
+   - summarize_day(messages) → 3-5 bullet vibe summary via GPT-4o-mini
+   - Uses OPENAI_API_KEY from .env
+   - Chunks content to 8000 chars max, graceful fallback on failure
+
+4. Wired everything into the pipeline:
+   - scrape.py: imports parse_batch, calls it after process_messages
+   - report.py: imports summarize_day + top_engaged_messages, calls both
+   - report.py: passes llm_summary + top_posts to generate_daily_report()
+   - src/reporting/report.py: accepts llm_summary + top_posts params
+   - template.html: added "AI Vibe Check" section + "Top Posts" section
+
+5. All Python files compile clean (verified with py_compile)
+
+WHAT'S BROKEN
 -------------
-1. Complete design exploration - generate/choose visual mockup direction
-2. Update design spec to reflect web app (FastAPI + Next.js) instead of HTML reports
-3. Set up Next.js + FastAPI project structure
-4. Implement structured parsing (category, confession_id, title, content)
-5. Add database migration for new columns
-6. Build LLM summarizer with OpenAI
-7. Create top posts by reactions ranking
-8. Build dashboard UI with chosen design direction
+Telethon auth fails non-interactively. scrape.py --limit 50 errors with:
+  "Please enter your phone (or bot token):"
+  EOFError: EOF when reading a line
+
+.env has all creds correctly:
+  TELEGRAM_API_ID=23301780
+  TELEGRAM_API_HASH=<set>
+  TELEGRAM_PHONE=<set, valid +65 number>
+  OPENAI_API_KEY=<set>
+
+Verified env vars load correctly via python-dotenv (all four print fine).
+The error is at telegram_scraper.py line 68: await client.start(phone=PHONE)
+Telethon's client.start() is treating phone as callable/lambda despite PHONE
+being a valid string. This is likely a telethon 1.43.2 quirk — the default
+phone param in TelegramClient.start() is a lambda that calls input(), and
+somehow passing phone=<string> doesn't override it.
+
+WHAT NEEDS TO HAPPEN
+--------------------
+1. Fix telethon auth to work without stdin prompt
+   - Check if client.start() API changed in telethon 1.43
+   - Alternative: try client.send_code_request(phone) + client.sign_in() manually
+   - Or: pass phone as a lambda that returns the string: phone=lambda: PHONE
+   - The sessions/ dir doesn't exist yet — first run needs to create session
+
+2. Run: cd /home/ubuntu/confessit-scraper && venv/bin/python scrape.py --limit 100
+   - Should scrape, parse, and store messages
+   - Verify DB has data: venv/bin/python -c "from src.storage.db import init_db, get_messages; init_db(); msgs = get_messages(); print(len(msgs), 'messages')"
+
+3. Run: venv/bin/python report.py
+   - Should generate a daily report for yesterday
+   - Verify it includes AI Vibe Check and Top Posts sections
+
+4. (Optional) Backfill existing messages after a full scrape
 
 KEY FILES
 ---------
-- report.py - CLI for generating reports, now has --serve and --open flags
-- docs/superpowers/specs/2026-04-26-enhanced-parsing-design.md - current design spec
-- src/storage/db.py - SQLite database layer
-- src/analysis/sentiment.py - VADER sentiment + topic classification
-- src/analysis/visualizations.py - Chart generation
-- src/reporting/report.py - Jinja2 HTML report generation
-- data/messages.db - SQLite database with ~40K messages
-- reports/template.html - Jinja2 template for HTML reports
+- scrape.py — CLI entry point for scraping
+- report.py — CLI entry point for report generation
+- src/scraper/telegram_scraper.py — telethon async scraper (LINE 68 is the auth)
+- src/storage/db.py — SQLite layer with v2 migration
+- src/parsing/parser.py — structured confession parser
+- src/analysis/llm_summarizer.py — OpenAI summarizer
+- src/reporting/report.py — Jinja2 report generator
+- reports/template.html — NUS-branded HTML template
+- .env — credentials (all set)
 
-IMPORTANT DECISIONS
--------------------
-- Option 1 chosen: Incremental upgrade (parsing + ranking + LLM summary, defer fine-tuning)
-- Chose FastAPI + Next.js for web app
-- Design direction: fun/campus-y, not enterprise/corporate
-- NUS brand colors: #003D7C (blue), #EF7C00 (orange)
-- LLM model: GPT-4o mini for summarization
-
-EXPLICIT CONSTRAINTS
---------------------
-- Must use brainstorming skill before implementation (HARD-GATE)
-- Design must be fun/campus-y, not corporate
-- OpenAI API key provided by user (stored in ~/.gstack/openai.json)
-
-CONTEXT FOR CONTINUATION
-------------------------
-- Need to wait for OpenAI organization verification OR build manual HTML preview instead of AI-generated mockups
-- Design spec needs updating to reflect web app architecture (FastAPI + Next.js) vs static HTML reports
-- Next step: Either complete design exploration or move to implementation planning with writing-plans skill
-- User approved Option 1 design, but pivot to web app changes scope significantly
-
----
-
-TO CONTINUE IN A NEW SESSION:
-
-1. Press 'n' in OpenCode TUI to open a new session, or run 'opencode' in a new terminal
-2. Paste the HANDOFF CONTEXT above as your first message
-3. Add your request: "Continue from the handoff context above. [Your next task]"
+IMPORTANT
+---------
+- Use the venv: /home/ubuntu/confessit-scraper/venv/bin/python
+- The sessions/ dir will be created on first successful auth
+- .env is already configured, don't modify it
+- Project root is /home/ubuntu/confessit-scraper

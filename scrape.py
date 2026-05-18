@@ -12,6 +12,7 @@ from src.logger import setup_logging
 from src.scraper import scrape_channel
 from src.storage.db import init_db, save_messages, get_latest_id
 from src.analysis.processor import process_messages
+from src.parsing import parse_batch
 
 console = Console()
 
@@ -103,6 +104,7 @@ Examples:
 
     # --- process and save ---
     messages = process_messages(raw_messages)
+    messages = parse_batch(messages)  # extract category, title, content, confession_id
 
     try:
         saved = save_messages(messages)
