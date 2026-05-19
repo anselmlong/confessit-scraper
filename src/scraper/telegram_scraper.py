@@ -137,3 +137,150 @@ def scrape_channel(
     return asyncio.run(
         _scrape_channel_async(channel_url, limit=limit, since_id=since_id, progress_callback=progress_callback)
     )
+
+
+async def _scrape_replies_async(
+    channel_url: str,
+    group_id: int = None,
+    limit: int = None,
+    since_id: int = 0,
+    progress_callback=None,
+) -> list[dict]:
+    """Scrape replies from the linked discussion group of a Telegram channel.
+
+    Returns a list of reply dicts with keys:
+        post_id, linked_parent_id, reply_msg_id, date, text,
+        author, reactions_up, reactions_down
+    """
+    _validate_credentials()
+
+    sessions_dir = os.path.join(_PROJECT_ROOT, "sessions")
+    os.makedirs(sessions_dir, exist_ok=True)
+    session_path = os.path.join(sessions_dir, "nusScraper")
+
+    log.info("Connecting to Telegram...")
+    client = TelegramClient(session_path, int(API_ID), API_HASH)
+    replies = []
+
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            raise RuntimeError(
+                "Not logged in to Telegram.\n"
+                "Run  python auth.py  once to complete sign-in, then retry."
+            )
+
+        # Resolve the linked discussion group if not given directly
+        if group_id:
+            linked = await client.get_entity(group_id)
+        else:
+            channel = await client.get_entity(channel_url)
+            from telethon import functions
+            full = await client(functions.channels.GetFullChannelRequest(channel=channel))
+            linked_id = full.full_chat.linked_chat_id
+            if not linked_id:
+                raise ValueError(f"Channel {channel_url} has no linked discussion group.")
+            linked = await client.get_entity(linked_id)
+            log.info("Linked group: %s (ID: %d)", linked.title, linked.id)
+
+        log.info("Fetching messages from linked group (since_id=%d)...", since_id)
+
+        try:
+            async for msg in client.iter_messages(linked, limit=limit, min_id=since_id):
+                if not msg.text:
+                    continue
+
+                # Only process messages that are replies (have reply_to)
+                if not msg.reply_to:
+                    continue
+
+                parent_id = msg.reply_to.reply_to_msg_id
+                if not parent_id:
+                    continue
+
+                # Parse the reply format:
+                # **Commenter <emoji>:**
+                # <text>
+                #
+                # **<up> 🇸🇬 | <down> 👎**
+                text = msg.text
+                author = None
+                reactions_up = 0
+                reactions_down = 0
+
+                # Extract author from the first line
+                lines = text.split("\n")
+                if lines and lines[0].startswith("**Commenter"):
+                    author = lines[0].strip("*").strip()
+                    reply_body = "\n".join(lines[1:]).strip()
+                else:
+                    reply_body = text
+
+                # Extract upvote/downvote from the last line
+                last_line = lines[-1].strip() if lines else ""
+                import re
+                vote_match = re.search(r'\*\*(\d+)\s*[🇸🇬]+\s*\|\s*(\d+)\s*👎\*\*', last_line)
+                if vote_match:
+                    reactions_up = int(vote_match.group(1))
+                    reactions_down = int(vote_match.group(2))
+                    # Remove the vote line from reply body
+                    reply_body = "\n".join(lines[1:-1]).strip() if len(lines) > 2 else ""
+
+                replies.append({
+                    "linked_parent_id": parent_id,
+                    "reply_msg_id": msg.id,
+                    "date": msg.date.isoformat(),
+                    "text": reply_body or text,
+                    "author": author,
+                    "reactions_up": reactions_up,
+                    "reactions_down": reactions_down,
+                })
+
+                if len(replies) % 100 == 0:
+                    log.debug("Collected %d replies so far...", len(replies))
+
+                if progress_callback:
+                    progress_callback(len(replies))
+
+                await asyncio.sleep(0.05)
+
+        except FloodWaitError as e:
+            log.warning("Rate limit hit — waiting %d seconds...", e.seconds)
+            for remaining in range(e.seconds, 0, -5):
+                log.debug("Flood wait: %d seconds remaining", remaining)
+                await asyncio.sleep(min(5, remaining))
+            log.info("Retrying after flood wait. %d replies collected.", len(replies))
+
+    except UsernameInvalidError:
+        raise ValueError(f"Channel not found: {channel_url!r}")
+    except (ConnectionError, OSError) as e:
+        raise RuntimeError(f"Network error: {e}") from e
+    finally:
+        await client.disconnect()
+
+    log.info("Reply scrape complete: %d replies collected.", len(replies))
+    return replies
+
+
+def scrape_replies(
+    channel_url: str = "t.me/NUSConfessIT",
+    group_id: int = None,
+    limit: int = None,
+    since_id: int = 0,
+    progress_callback=None,
+) -> list[dict]:
+    """Scrape replies from the linked discussion group.
+
+    Args:
+        channel_url: The main channel URL (used to find the linked group).
+        group_id: Direct linked group ID (bypasses channel lookup).
+        limit: Max messages to fetch (None = all).
+        since_id: Only fetch messages newer than this ID (for incremental).
+        progress_callback: Optional callback(reply_count_so_far).
+    """
+    return asyncio.run(
+        _scrape_replies_async(
+            channel_url, group_id=group_id, limit=limit,
+            since_id=since_id, progress_callback=progress_callback
+        )
+    )

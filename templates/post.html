@@ -41,40 +41,48 @@
   </div>
 
   <!-- Replies section -->
-  {% if post.reply_count > 0 %}
+  {% if replies or total_in_group > 0 %}
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
     <h2 style="font-size:0.85rem; font-weight:700; color:#003D7C; text-transform:uppercase; letter-spacing:0.8px; margin:0;">
-      {{ post.reply_count }} {{ 'Reply' if post.reply_count == 1 else 'Replies' }}
-      {% if replies %} ({{ replies|length }} stored){% endif %}
+      💬 Discussion
+      {% if total_in_group > 0 %}
+        ({{ total_in_group }} in group)
+      {% elif post.reply_count > 0 %}
+        ({{ post.reply_count }} comments)
+      {% endif %}
     </h2>
     <a href="{{ tg_url }}" target="_blank" rel="noopener"
        style="font-size:0.82rem; color:#003D7C; font-weight:600; text-decoration:none;
               background:#e8f0fe; padding:4px 14px; border-radius:20px;">
-      See all {{ post.reply_count }} on Telegram ↗
+      See all on Telegram ↗
     </a>
   </div>
 
-  {% if replies %}
   {% for r in replies %}
   <div style="background:#fff; border-radius:8px; padding:14px 16px; margin-bottom:10px;
               box-shadow:0 1px 3px rgba(0,0,0,0.06); border-left:3px solid #e0e0e0;">
+    {% if r.author %}
+    <div style="font-size:0.76rem; color:#888; margin-bottom:4px;">
+      {{ r.author }} commented
+    </div>
+    {% endif %}
     <div style="font-size:0.88rem; line-height:1.7; color:#333;">
       {{ r.text | tgmd }}
     </div>
     <div style="margin-top:8px; font-size:0.74rem; color:#bbb; display:flex; gap:12px;">
       <span>{{ r.date[:10] if r.date }}</span>
-      {% if r.reactions_count %}<span>❤️ {{ r.reactions_count }}</span>{% endif %}
+      {% if r.reactions_up is defined and r.reactions_up > 0 %}
+        <span>👍 {{ r.reactions_up }}</span>
+      {% endif %}
+      {% if r.reactions_down is defined and r.reactions_down > 0 %}
+        <span>👎 {{ r.reactions_down }}</span>
+      {% endif %}
+      {% if r.reactions_count is defined and r.reactions_count %}
+        <span>❤️ {{ r.reactions_count }}</span>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
-  {% else %}
-  <div class="card">
-    <div style="text-align:center; padding:20px; color:#999; font-size:0.9rem;">
-      Replies are in the Telegram discussion thread —
-      <a href="{{ tg_url }}" target="_blank" rel="noopener" style="color:#003D7C; font-weight:600;">read them here ↗</a>
-    </div>
-  </div>
-  {% endif %}
 
   {% else %}
   <div class="card">

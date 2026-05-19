@@ -96,8 +96,10 @@ def get_overview_stats():
             MAX(reactions_count) as max_reactions
         FROM messages WHERE is_reply=0
     """).fetchone()
+    total_replies = conn.execute("SELECT COUNT(*) FROM replies").fetchone()[0]
     conn.close()
     d = dict(r)
+    d["total_replies"] = total_replies
     d["first_date"] = (d["first_date"] or "")[:10]
     d["last_date"] = (d["last_date"] or "")[:10]
     d["total_views"] = int(d["total_views"] or 0)
@@ -154,13 +156,22 @@ def get_post_and_replies(post_id: int):
     ).fetchone()
     if not post:
         conn.close()
-        return None, []
-    replies = conn.execute(
+        return None, [], 0
+    # Inline replies from the channel itself
+    inline = conn.execute(
         "SELECT * FROM messages WHERE reply_to_msg_id=? ORDER BY date ASC",
         (post_id,)
     ).fetchall()
+    # Replies from linked discussion group
+    discussion = conn.execute(
+        "SELECT * FROM replies WHERE post_id=? ORDER BY date ASC",
+        (post_id,)
+    ).fetchall()
+    total_in_group = conn.execute(
+        "SELECT COUNT(*) FROM replies WHERE post_id=?", (post_id,)
+    ).fetchone()[0]
     conn.close()
-    return dict(post), [dict(r) for r in replies]
+    return dict(post), [dict(r) for r in inline] + [dict(r) for r in discussion], total_in_group
 
 
 @app.route("/")
@@ -220,11 +231,12 @@ def search():
 
 @app.route("/post/<int:post_id>")
 def post(post_id):
-    p, replies = get_post_and_replies(post_id)
+    p, replies, total_in_group = get_post_and_replies(post_id)
     if not p:
         abort(404)
     tg_url = f"https://t.me/NUSConfessIT/{post_id}"
-    return render_template("post.html", active_page="", post=p, replies=replies, tg_url=tg_url)
+    return render_template("post.html", active_page="", post=p, replies=replies,
+                           total_in_group=total_in_group, tg_url=tg_url)
 
 
 if __name__ == "__main__":
