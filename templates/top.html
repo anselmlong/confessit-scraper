@@ -17,9 +17,9 @@
     <span style="font-size:0.82rem; color:#666;">Showing top <strong>{{ n }}</strong> of <strong>{{ "{:,}".format(total) }}</strong> posts</span>
     <span style="font-size:0.82rem; color:#666;">&middot; Best score: <strong style="color:#EF7C00;">{{ posts[0].score if posts else 0 }}</strong></span>
     <div style="margin-left:auto; display:flex; gap:6px;">
-      <a href="/top?range={{ range_key }}&n=25" style="text-decoration:none; font-size:0.78rem; padding:4px 12px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 25 }}">25</a>
-      <a href="/top?range={{ range_key }}&n=50" style="text-decoration:none; font-size:0.78rem; padding:4px 12px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 50 }}">50</a>
-      <a href="/top?range={{ range_key }}&n=100" style="text-decoration:none; font-size:0.78rem; padding:4px 12px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 100 }}">100</a>
+      <a href="/top?range={{ range_key }}&n=25" style="text-decoration:none; font-size:0.78rem; padding:8px 14px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 25 }}">25</a>
+      <a href="/top?range={{ range_key }}&n=50" style="text-decoration:none; font-size:0.78rem; padding:8px 14px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 50 }}">50</a>
+      <a href="/top?range={{ range_key }}&n=100" style="text-decoration:none; font-size:0.78rem; padding:8px 14px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 100 }}">100</a>
     </div>
   </div>
 
