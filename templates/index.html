@@ -26,7 +26,7 @@
       {% for month, count in monthly %}
       <div class="bar-row">
         <span class="bar-label">{{ month }}</span>
-        <div class="bar-fill" style="width: {{ [count / max_monthly * 500, 500] | min }}px"></div>
+        <div class="bar-fill" style="width: {{ (count / max_monthly * 100) | round(1) }}%"></div>
         <span class="bar-val">{{ count }}</span>
       </div>
       {% endfor %}
