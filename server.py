@@ -17,6 +17,7 @@ from src.storage.db import DB_PATH, init_db
 
 app = Flask(__name__)
 app.template_folder = str(Path(__file__).parent / "templates")
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 def _tg_md_to_html(text: str) -> Markup:
