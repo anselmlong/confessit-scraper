@@ -43,7 +43,7 @@
         {% if p.title %}<div class="c-title">{{ p.title }}</div>{% endif %}
         <div class="c-text">{{ p.excerpt }}</div>
         <div class="c-meta">
-          <span class="score-tag">Score {{ p.score }}</span>
+          <span class="score-tag" title="Score = reactions × 3 + replies × 2 + forwards">Score {{ p.score }}</span>
           {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
           <span aria-label="{{ p.reactions_count }} reactions">❤️ {{ p.reactions_count }}</span>
           <span aria-label="{{ p.reply_count }} replies">💬 {{ p.reply_count }}</span>
