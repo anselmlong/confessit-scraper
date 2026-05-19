@@ -25,10 +25,10 @@
   <!-- Stats bar -->
   <div class="card" style="padding:16px 20px; margin-bottom:16px;">
     <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center;">
-      <span style="font-size:1.1rem;">❤️ <strong>{{ post.reactions_count }}</strong></span>
-      <span style="font-size:1.1rem;">💬 <strong>{{ post.reply_count }}</strong></span>
-      <span style="font-size:1.1rem;">↗ <strong>{{ post.forwards }}</strong></span>
-      <span style="font-size:1.1rem;">👁 <strong>{{ "{:,}".format(post.views or 0) }}</strong></span>
+      <span style="font-size:1.1rem;" aria-label="{{ post.reactions_count }} reactions">❤️ <strong>{{ post.reactions_count }}</strong></span>
+      <span style="font-size:1.1rem;" aria-label="{{ post.reply_count }} replies">💬 <strong>{{ post.reply_count }}</strong></span>
+      <span style="font-size:1.1rem;" aria-label="{{ post.forwards }} forwards">↗ <strong>{{ post.forwards }}</strong></span>
+      <span style="font-size:1.1rem;" aria-label="{{ '{:,}'.format(post.views or 0) }} views">👁 <strong>{{ "{:,}".format(post.views or 0) }}</strong></span>
       <span class="score-tag" style="font-size:0.85rem; padding:4px 12px;">Score {{ post.score }}</span>
     </div>
   </div>

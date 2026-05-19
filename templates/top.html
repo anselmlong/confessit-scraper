@@ -34,10 +34,10 @@
         <div class="c-meta">
           <span class="score-tag">Score {{ p.score }}</span>
           {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
-          <span>❤️ {{ p.reactions_count }}</span>
-          <span>💬 {{ p.reply_count }}</span>
-          <span>↗ {{ p.forwards }}</span>
-          <span>👁 {{ "{:,}".format(p.views or 0) }}</span>
+          <span aria-label="{{ p.reactions_count }} reactions">❤️ {{ p.reactions_count }}</span>
+          <span aria-label="{{ p.reply_count }} replies">💬 {{ p.reply_count }}</span>
+          <span aria-label="{{ p.forwards }} forwards">↗ {{ p.forwards }}</span>
+          <span aria-label="{{ '{:,}'.format(p.views or 0) }} views">👁 {{ "{:,}".format(p.views or 0) }}</span>
           <span>{{ p.date[:10] }}</span>
           {% if p.confession_id %}<span style="color:#bbb;">#{{ p.confession_id }}</span>{% endif %}
         </div>
