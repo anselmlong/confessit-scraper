@@ -8,32 +8,6 @@
 <div class="container">
 
   <div class="card">
-    <h2>All-Time Stats</h2>
-    <div class="stat-grid">
-      <div class="stat"><div class="val">{{ "{:,}".format(stats.total) }}</div><div class="lbl">Total Posts</div></div>
-      <div class="stat"><div class="val">{{ "{:,}".format(stats.total_views) }}</div><div class="lbl">Total Views</div></div>
-      <div class="stat"><div class="val">{{ stats.avg_reactions }}</div><div class="lbl">Avg Reactions</div></div>
-      <div class="stat"><div class="val">{{ stats.avg_words }}</div><div class="lbl">Avg Words</div></div>
-      <div class="stat"><div class="val">{{ stats.max_reactions }}</div><div class="lbl">Most Reactions</div></div>
-      <div class="stat"><div class="val">{{ stats.days_active }}</div><div class="lbl">Days Active</div></div>
-      <div class="stat"><div class="val">{{ "{:,}".format(stats.total_replies) }}</div><div class="lbl">Replies Stored</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Posts Per Month</h2>
-    <div class="bar-chart">
-      {% for month, count in monthly %}
-      <div class="bar-row">
-        <span class="bar-label">{{ month }}</span>
-        <div class="bar-fill" style="width: {{ (count / max_monthly * 100) | round(1) }}%"></div>
-        <span class="bar-val">{{ count }}</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="card">
     <h2>Top Posts This Week</h2>
     {% for p in top_week %}
     <a href="/post/{{ p.id }}" style="text-decoration:none; color:inherit; display:block;">
@@ -56,6 +30,32 @@
     {% else %}
     <div class="empty">No posts this week yet.</div>
     {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2>All-Time Stats</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="val">{{ "{:,}".format(stats.total) }}</div><div class="lbl">Total Posts</div></div>
+      <div class="stat"><div class="val">{{ "%.1fM" % (stats.total_views / 1000000) if stats.total_views >= 1000000 else "{:,}".format(stats.total_views) }}</div><div class="lbl">Total Views</div></div>
+      <div class="stat"><div class="val">{{ stats.avg_reactions }}</div><div class="lbl">Avg Reactions</div></div>
+      <div class="stat"><div class="val">{{ stats.avg_words }}</div><div class="lbl">Avg Words</div></div>
+      <div class="stat"><div class="val">{{ stats.max_reactions }}</div><div class="lbl">Most Reactions</div></div>
+      <div class="stat"><div class="val">{{ stats.days_active }}</div><div class="lbl">Days Active</div></div>
+      <div class="stat"><div class="val">{{ "%.0fK" % (stats.total_replies / 1000) if stats.total_replies >= 1000 else "{:,}".format(stats.total_replies) }}</div><div class="lbl">Replies Stored</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Posts Per Month</h2>
+    <div class="bar-chart">
+      {% for month, count in monthly %}
+      <div class="bar-row">
+        <span class="bar-label">{{ month }}</span>
+        <div class="bar-fill" style="width: {{ (count / max_monthly * 100) | round(1) }}%"></div>
+        <span class="bar-val">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 
 </div>
