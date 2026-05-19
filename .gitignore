@@ -13,3 +13,4 @@ reports/top_year.html
 logs/
 *.egg-info/
 venv/
+.gstack/

@@ -3,7 +3,11 @@
 {% block title %}{{ post.title or 'Confession ' ~ conf_label }} — NUSConfessIT{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>{{ post.title or 'Confession ' ~ conf_label }}</h1>
+  <div style="display:flex; gap:20px; margin-bottom:14px; align-items:center; flex-wrap:wrap;">
+    <a href="/" style="color:rgba(255,255,255,0.65); text-decoration:none; font-size:0.84rem; font-weight:500;">← All Posts</a>
+    <a href="{{ tg_url }}" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.65); text-decoration:none; font-size:0.84rem; font-weight:500;">View on Telegram ↗</a>
+  </div>
+  <h1>{{ post.title or ('Confession ' ~ conf_label) }}</h1>
   <p>
     {{ post.date[:10] if post.date }}
     &middot; {{ conf_label }}
@@ -13,80 +17,46 @@
 
 <div class="container">
 
-  <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
-    <a href="/" style="text-decoration:none; color:#666; font-size:0.84rem;">← Back</a>
-    <a href="{{ tg_url }}" target="_blank" rel="noopener"
-       style="text-decoration:none; font-size:0.82rem; color:#003D7C; font-weight:600;
-              background:#e8f0fe; padding:5px 14px; border-radius:20px;">
-      View on Telegram ↗
-    </a>
+  <div class="post-stats">
+    <span aria-label="{{ post.reactions_count }} reactions">❤️ <strong>{{ post.reactions_count }}</strong></span>
+    <span aria-label="{{ post.reply_count }} replies">💬 <strong>{{ post.reply_count }}</strong></span>
+    <span aria-label="{{ post.forwards }} forwards">↗ <strong>{{ post.forwards }}</strong></span>
+    <span aria-label="{{ '{:,}'.format(post.views or 0) }} views">👁 <strong>{{ "{:,}".format(post.views or 0) }}</strong></span>
   </div>
 
-  <!-- Stats bar -->
-  <div class="card" style="padding:16px 20px; margin-bottom:16px;">
-    <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center;">
-      <span style="font-size:1.1rem;" aria-label="{{ post.reactions_count }} reactions">❤️ <strong>{{ post.reactions_count }}</strong></span>
-      <span style="font-size:1.1rem;" aria-label="{{ post.reply_count }} replies">💬 <strong>{{ post.reply_count }}</strong></span>
-      <span style="font-size:1.1rem;" aria-label="{{ post.forwards }} forwards">↗ <strong>{{ post.forwards }}</strong></span>
-      <span style="font-size:1.1rem;" aria-label="{{ '{:,}'.format(post.views or 0) }} views">👁 <strong>{{ "{:,}".format(post.views or 0) }}</strong></span>
-      <span class="score-tag" style="font-size:0.85rem; padding:4px 12px;">Score {{ post.score }}</span>
-    </div>
+  <div class="card reading-zone">
+    {{ (post.content or post.text) | tgmd }}
   </div>
 
-  <!-- Full post text -->
-  <div class="card">
-    <div style="font-size:0.95rem; line-height:1.8; color:#222;">
-      {{ post.text | tgmd }}
-    </div>
-  </div>
-
-  <!-- Replies section -->
   {% if replies or total_in_group > 0 %}
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-    <h2 style="font-size:0.85rem; font-weight:700; color:#003D7C; text-transform:uppercase; letter-spacing:0.8px; margin:0;">
-      💬 Discussion
-      {% if total_in_group > 0 %}
-        ({{ total_in_group }} in group)
-      {% elif post.reply_count > 0 %}
-        ({{ post.reply_count }} comments)
-      {% endif %}
-    </h2>
-    <a href="{{ tg_url }}" target="_blank" rel="noopener"
-       style="font-size:0.82rem; color:#003D7C; font-weight:600; text-decoration:none;
-              background:#e8f0fe; padding:4px 14px; border-radius:20px;">
-      See all on Telegram ↗
-    </a>
-  </div>
+  <div style="margin-top:28px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+      <h2 style="font-size:0.85rem; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:0.8px; margin:0; padding-bottom:8px; border-bottom:2px solid var(--orange); display:inline-block;">
+        💬 Discussion
+        {% if total_in_group > 0 %}({{ total_in_group }} in group){% elif post.reply_count > 0 %}({{ post.reply_count }} comments){% endif %}
+      </h2>
+      <a href="{{ tg_url }}" target="_blank" rel="noopener" class="pill-blue">See all on Telegram ↗</a>
+    </div>
 
-  {% for r in replies %}
-  <div style="background:#fff; border-radius:8px; padding:14px 16px; margin-bottom:10px;
-              box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-    {% if r.author %}
-    <div style="font-size:0.76rem; color:#888; margin-bottom:4px;">
-      {{ r.author }} commented
-    </div>
-    {% endif %}
-    <div style="font-size:0.88rem; line-height:1.7; color:#333;">
-      {{ r.text | tgmd }}
-    </div>
-    <div style="margin-top:8px; font-size:0.74rem; color:#bbb; display:flex; gap:12px;">
-      <span>{{ r.date[:10] if r.date }}</span>
-      {% if r.reactions_up is defined and r.reactions_up > 0 %}
-        <span>👍 {{ r.reactions_up }}</span>
+    {% for r in replies %}
+    <div class="reply-card">
+      {% if r.author %}
+      <div class="reply-author">{{ r.author }}</div>
       {% endif %}
-      {% if r.reactions_down is defined and r.reactions_down > 0 %}
-        <span>👎 {{ r.reactions_down }}</span>
-      {% endif %}
-      {% if r.reactions_count is defined and r.reactions_count %}
-        <span>❤️ {{ r.reactions_count }}</span>
-      {% endif %}
+      <div class="reply-text">{{ r.text | tgmd }}</div>
+      <div class="reply-meta">
+        <span>{{ r.date[:10] if r.date }}</span>
+        {% if r.reactions_up is defined and r.reactions_up > 0 %}<span>👍 {{ r.reactions_up }}</span>{% endif %}
+        {% if r.reactions_down is defined and r.reactions_down > 0 %}<span>👎 {{ r.reactions_down }}</span>{% endif %}
+        {% if r.reactions_count is defined and r.reactions_count %}<span>❤️ {{ r.reactions_count }}</span>{% endif %}
+      </div>
     </div>
+    {% endfor %}
   </div>
-  {% endfor %}
 
   {% else %}
   <div class="card">
-    <div class="empty" style="padding:16px 0;">No replies on this post.</div>
+    <div class="empty" style="padding:16px 0;">No discussion captured — the full thread is on <a href="{{ tg_url }}" target="_blank" rel="noopener" class="link-blue">Telegram</a>.</div>
   </div>
   {% endif %}
 

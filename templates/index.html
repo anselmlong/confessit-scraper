@@ -1,39 +1,112 @@
 {% extends "base.html" %}
-{% block title %}Overview — NUSConfessIT Dashboard{% endblock %}
+{% block title %}NUSConfessIT Dashboard{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Overview</h1>
-  <p>{{ stats.first_date }} → {{ stats.last_date }} &middot; {{ "{:,}".format(stats.total) }} confessions</p>
+  <h1>NUSConfessIT</h1>
+  <p>{{ "{:,}".format(stats.total) }} confessions &middot; {{ stats.first_date }} to {{ stats.last_date }}</p>
+  <p id="time-tagline" style="opacity:0.5; font-size:0.81rem; margin-top:4px; font-style:italic;"></p>
 </div>
+<script>
+(function(){
+  var h = new Date().getHours();
+  var msg = h < 4  ? 'Still awake? You\'re in good company.' :
+            h < 8  ? 'Early start — or you never stopped.' :
+            h < 12 ? 'Good morning. Here\'s what\'s been said.' :
+            h < 17 ? 'Afternoon procrastination. Fully supported.' :
+            h < 21 ? 'Evening edition — catch up on campus.' :
+                     'Late night. The best stuff comes out after dark.';
+  document.getElementById('time-tagline').textContent = msg;
+})();
+</script>
 <div class="container">
 
+  <div class="filter-bar">
+    <form method="get" action="/">
+      <input type="hidden" name="sort" value="{{ sort_key }}">
+      <input type="hidden" name="range" value="{{ range_key }}">
+      <input type="hidden" name="n" value="{{ n }}">
+      <div class="search-bar" style="margin-bottom:0; display:flex; align-items:center; gap:8px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search confessions… e.g. 'relationship', 'CS2030', 'internship'" />
+        <button type="submit">Search</button>
+        {% if q %}<a href="/?sort={{ sort_key }}&range={{ range_key }}&n={{ n }}" class="clear-search" title="Clear search" aria-label="Clear search">✕</a>{% endif %}
+      </div>
+    </form>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <span class="filter-label">Sort</span>
+        <div class="filter-pills">
+          <a href="/?sort=reactions&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'reactions' }}">❤ Reactions</a>
+          <a href="/?sort=replies&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'replies' }}">💬 Replies</a>
+          <a href="/?sort=score&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'score' }}">✨ Score</a>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group">
+        <span class="filter-label">When</span>
+        <div class="filter-pills">
+          <a href="/?sort={{ sort_key }}&range=week&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'week' }}">This Week</a>
+          <a href="/?sort={{ sort_key }}&range=month&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'month' }}">This Month</a>
+          <a href="/?sort={{ sort_key }}&range=year&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'year' }}">This Year</a>
+          <a href="/?sort={{ sort_key }}&range=all&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'all' }}">All Time</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+    <p class="results-meta" style="margin:0;">
+      {% if q %}
+        <strong>{{ posts|length }}</strong> results for <strong>"{{ q }}"</strong>
+        &middot; <a href="/?sort={{ sort_key }}&range={{ range_key }}&n={{ n }}" class="link-blue" style="font-size:0.83rem;">clear</a>
+      {% else %}
+        Top <strong>{{ n }}</strong> of <strong>{{ "{:,}".format(total) }}</strong>
+        {% if posts %}
+          {% if sort_key == 'reactions' %}&middot; most liked: <strong style="color:var(--orange);">{{ posts[0].reactions_count }}</strong>
+          {% elif sort_key == 'replies' %}&middot; most discussed: <strong style="color:var(--orange);">{{ posts[0].reply_count }}</strong>
+          {% else %}&middot; best score: <strong style="color:var(--orange);">{{ posts[0].score }}</strong>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </p>
+    <div style="display:flex; gap:6px;">
+      <a href="/?range={{ range_key }}&sort={{ sort_key }}&n=25{% if q %}&q={{ q|urlencode }}{% endif %}" class="n-pill {{ 'active' if n == 25 }}">25</a>
+      <a href="/?range={{ range_key }}&sort={{ sort_key }}&n=50{% if q %}&q={{ q|urlencode }}{% endif %}" class="n-pill {{ 'active' if n == 50 }}">50</a>
+      <a href="/?range={{ range_key }}&sort={{ sort_key }}&n=100{% if q %}&q={{ q|urlencode }}{% endif %}" class="n-pill {{ 'active' if n == 100 }}">100</a>
+    </div>
+  </div>
+
   <div class="card">
-    <h2>Top Posts This Week</h2>
-    {% for p in top_week %}
+    {% for p in posts %}
     <a href="/post/{{ p.id }}" style="text-decoration:none; color:inherit; display:block;">
     <div class="confession-card">
-      <div class="rank-num rank-{{ loop.index if loop.index <= 3 else 'x' }}" style="{{ '' if loop.index <= 3 else 'background:#003D7C' }}">{{ loop.index }}</div>
+      <div class="rank-num {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">{{ loop.index }}</div>
       <div class="c-body">
-        {% if p.title %}<div class="c-title">{{ p.title }}</div>{% endif %}
-        <div class="c-text">{{ p.excerpt }}</div>
+        {% if p.title %}
+          <div class="c-title">{% if q %}{{ p.title | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}{% else %}{{ p.title }}{% endif %}</div>
+        {% endif %}
+        <div class="c-text">{% if q %}{{ p.excerpt | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}{% else %}{{ p.excerpt }}{% endif %}</div>
         <div class="c-meta">
-          <span class="score-tag" title="Score = reactions × 3 + replies × 2 + forwards">Score {{ p.score }}</span>
           {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
           <span aria-label="{{ p.reactions_count }} reactions">❤️ {{ p.reactions_count }}</span>
           <span aria-label="{{ p.reply_count }} replies">💬 {{ p.reply_count }}</span>
           <span aria-label="{{ p.forwards }} forwards">↗ {{ p.forwards }}</span>
+          <span aria-label="{{ '{:,}'.format(p.views or 0) }} views">👁 {{ "{:,}".format(p.views or 0) }}</span>
           <span>{{ p.date[:10] }}</span>
+          {% if p.confession_id %}<span style="color:#ccc;">#{{ p.confession_id }}</span>{% endif %}
         </div>
       </div>
     </div>
     </a>
     {% else %}
-    <div class="empty">No posts this week yet.</div>
+    <div class="empty">{% if q %}Nothing found for "{{ q }}" — try a broader term or a different time range.{% else %}Quiet {{ 'week' if range_key == 'week' else 'month' if range_key == 'month' else 'year' if range_key == 'year' else 'archive' }}. Everyone's studying (probably).{% endif %}</div>
     {% endfor %}
   </div>
 
   <div class="card">
-    <h2>All-Time Stats</h2>
+    <h2>Channel Stats</h2>
     <div class="stat-grid">
       <div class="stat"><div class="val">{{ "{:,}".format(stats.total) }}</div><div class="lbl">Total Posts</div></div>
       <div class="stat"><div class="val">{{ "%.1fM" % (stats.total_views / 1000000) if stats.total_views >= 1000000 else "{:,}".format(stats.total_views) }}</div><div class="lbl">Total Views</div></div>
@@ -46,7 +119,7 @@
   </div>
 
   <div class="card">
-    <h2>Posts Per Month</h2>
+    <h2>Monthly Activity</h2>
     <div class="bar-chart">
       {% for month, count in monthly %}
       <div class="bar-row">

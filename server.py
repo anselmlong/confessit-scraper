@@ -10,7 +10,7 @@ from pathlib import Path
 
 import re
 
-from flask import Flask, render_template, request, abort
+from flask import Flask, render_template, request, abort, redirect
 from markupsafe import Markup, escape
 
 from src.storage.db import DB_PATH, init_db
@@ -20,26 +20,78 @@ app.template_folder = str(Path(__file__).parent / "templates")
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
+_MD_INLINE = re.compile(r'\*\*|__(?=\S)|(?<=\S)__|~~|`|\[([^\]]+)\]\([^\)]+\)')
+
+
+def _strip_md(text: str) -> str:
+    """Strip markdown syntax, keeping link text."""
+    return _MD_INLINE.sub(r'\1', text)
+
+
 def _tg_md_to_html(text: str) -> Markup:
-    """Convert Telegram markdown to safe HTML."""
-    s = str(escape(text))  # escape HTML first
-    # links: [text](url)
+    """Convert Telegram markdown to HTML with paragraph, list, and rule support."""
+    s = str(escape(text))
+    # inline markup
     s = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)',
                r'<a href="\2" target="_blank" rel="noopener">\1</a>', s)
-    # bold: **text**
     s = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s, flags=re.DOTALL)
-    # italic: __text__
     s = re.sub(r'__(.+?)__', r'<em>\1</em>', s, flags=re.DOTALL)
-    # strikethrough: ~~text~~
     s = re.sub(r'~~(.+?)~~', r'<del>\1</del>', s, flags=re.DOTALL)
-    # inline code: `text`
     s = re.sub(r'`([^`]+)`', r'<code>\1</code>', s)
-    return Markup(s)
+
+    # Line-by-line pass: classify lines into blocks
+    blocks: list[tuple[str, object]] = []
+    para: list[str] = []
+    list_items: list[str] = []
+
+    def flush_para():
+        if para:
+            blocks.append(('p', list(para)))
+            para.clear()
+
+    def flush_list():
+        if list_items:
+            blocks.append(('ul', list(list_items)))
+            list_items.clear()
+
+    for line in s.splitlines():
+        stripped = line.strip()
+        if stripped == '---':
+            flush_para(); flush_list()
+            blocks.append(('hr', ''))
+        elif re.match(r'^-\s', stripped):
+            flush_para()
+            list_items.append(stripped[2:].strip())
+        elif not stripped:
+            flush_para(); flush_list()
+        else:
+            flush_list()
+            para.append(line)
+    flush_para(); flush_list()
+
+    # Render blocks
+    parts = []
+    for btype, bcontent in blocks:
+        if btype == 'hr':
+            parts.append('<hr>')
+        elif btype == 'ul':
+            items = ''.join(f'<li>{x}</li>' for x in bcontent)
+            parts.append(f'<ul>{items}</ul>')
+        else:
+            inner = '<br>'.join(bcontent)
+            if inner.strip():
+                parts.append(f'<p>{inner}</p>')
+    return Markup('\n'.join(parts))
 
 
 app.jinja_env.filters["tgmd"] = _tg_md_to_html
 
 RANGES = {"week": 7, "month": 30, "year": 365, "all": None}
+SORTS = {
+    "score": "(reactions_count * 3 + reply_count * 2 + forwards)",
+    "reactions": "reactions_count",
+    "replies": "reply_count",
+}
 
 
 def _connect():
@@ -53,7 +105,7 @@ def _score_expr():
 
 
 def _excerpt(text: str, max_chars: int = 300) -> str:
-    text = (text or "").strip()
+    text = _strip_md((text or "").strip())
     if len(text) <= max_chars:
         return text
     return text[:max_chars].rsplit(" ", 1)[0] + "…"
@@ -69,17 +121,22 @@ def _enrich(rows):
     return out
 
 
-def get_top(days=None, limit=25):
+def get_posts(days=None, limit=25, sort="reactions", q=None):
     conn = _connect()
-    q = f"SELECT *, {_score_expr()} AS score FROM messages WHERE is_reply=0"
+    order_expr = SORTS.get(sort, SORTS["reactions"])
+    sql = f"SELECT *, {_score_expr()} AS score FROM messages WHERE is_reply=0"
     params = []
     if days:
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        q += " AND date >= ?"
+        sql += " AND date >= ?"
         params.append(since)
-    q += " ORDER BY score DESC LIMIT ?"
+    if q:
+        like = f"%{q}%"
+        sql += " AND (text LIKE ? OR title LIKE ? OR content LIKE ?)"
+        params.extend([like, like, like])
+    sql += f" ORDER BY {order_expr} DESC LIMIT ?"
     params.append(limit)
-    rows = conn.execute(q, params).fetchall()
+    rows = conn.execute(sql, params).fetchall()
     conn.close()
     return _enrich(rows)
 
@@ -129,18 +186,6 @@ def get_monthly_counts():
     return data
 
 
-def search_posts(query: str, limit=50):
-    conn = _connect()
-    like = f"%{query}%"
-    rows = conn.execute(f"""
-        SELECT *, {_score_expr()} AS score
-        FROM messages
-        WHERE is_reply=0 AND (text LIKE ? OR title LIKE ? OR content LIKE ?)
-        ORDER BY score DESC LIMIT ?
-    """, (like, like, like, limit)).fetchall()
-    conn.close()
-    return _enrich(rows)
-
 
 def get_total_posts():
     conn = _connect()
@@ -177,25 +222,14 @@ def get_post_and_replies(post_id: int):
 
 @app.route("/")
 def index():
-    stats = get_overview_stats()
-    monthly = get_monthly_counts()
-    max_monthly = max(c for _, c in monthly) if monthly else 1
-    top_week = get_top(days=7, limit=5)
-    return render_template("index.html",
-        active_page="home",
-        stats=stats,
-        monthly=monthly,
-        max_monthly=max_monthly,
-        top_week=top_week,
-    )
-
-
-@app.route("/top")
-def top():
-    range_key = request.args.get("range", "all")
+    range_key = request.args.get("range", "week")
     if range_key not in RANGES:
-        range_key = "all"
+        range_key = "week"
     n = min(int(request.args.get("n", 25)), 200)
+    sort_key = request.args.get("sort", "reactions")
+    if sort_key not in SORTS:
+        sort_key = "reactions"
+    q = request.args.get("q", "").strip()
     days = RANGES[range_key]
 
     conn = _connect()
@@ -208,26 +242,35 @@ def top():
     total = conn.execute(count_q, params).fetchone()[0]
     conn.close()
 
-    posts = get_top(days=days, limit=n)
-    return render_template("top.html",
-        active_page="top",
+    posts = get_posts(days=days, limit=n, sort=sort_key, q=q or None)
+    stats = get_overview_stats()
+    monthly = get_monthly_counts()
+    max_monthly = max(c for _, c in monthly) if monthly else 1
+
+    return render_template("index.html",
+        active_page="home",
         posts=posts,
+        stats=stats,
+        monthly=monthly,
+        max_monthly=max_monthly,
         range_key=range_key,
+        sort_key=sort_key,
+        q=q,
         n=n,
         total=total,
     )
 
 
+@app.route("/top")
+def top():
+    qs = request.query_string.decode()
+    return redirect(f"/?{qs}" if qs else "/")
+
+
 @app.route("/search")
 def search():
     q = request.args.get("q", "").strip()
-    results = search_posts(q) if q else []
-    return render_template("search.html",
-        active_page="search",
-        q=q,
-        results=results,
-        total_posts=get_total_posts(),
-    )
+    return redirect(f"/?q={q}&sort=reactions" if q else "/")
 
 
 @app.route("/post/<int:post_id>")

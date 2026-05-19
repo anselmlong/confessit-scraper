@@ -1,25 +1,67 @@
 {% extends "base.html" %}
-{% block title %}Top Posts — NUSConfessIT Dashboard{% endblock %}
+{% block title %}Browse — NUSConfessIT Dashboard{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Top Confessions</h1>
-  <p>Ranked by score = reactions × 3 + replies × 2 + forwards</p>
+  <h1>Browse Confessions</h1>
+  <p>{% if q %}Results for "{{ q }}"{% else %}{{ "{:,}".format(total) }} posts{% endif %}</p>
 </div>
 <div class="container">
-  <div class="range-tabs">
-    <a href="/top?range=week&n={{ n }}" class="{{ 'active' if range_key == 'week' }}">This Week</a>
-    <a href="/top?range=month&n={{ n }}" class="{{ 'active' if range_key == 'month' }}">This Month</a>
-    <a href="/top?range=year&n={{ n }}" class="{{ 'active' if range_key == 'year' }}">This Year</a>
-    <a href="/top?range=all&n={{ n }}" class="{{ 'active' if range_key == 'all' }}">All Time</a>
+
+  <div class="filter-bar">
+    <form method="get" action="/top">
+      <input type="hidden" name="sort" value="{{ sort_key }}">
+      <input type="hidden" name="range" value="{{ range_key }}">
+      <input type="hidden" name="n" value="{{ n }}">
+      <div class="search-bar" style="margin-bottom:0; display:flex; align-items:center; gap:8px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search confessions… e.g. 'relationship', 'CS2030', 'internship'" />
+        <button type="submit">Search</button>
+        {% if q %}<a href="/top?sort={{ sort_key }}&range={{ range_key }}&n={{ n }}" class="clear-search" title="Clear search" aria-label="Clear search">✕</a>{% endif %}
+      </div>
+    </form>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <span class="filter-label">Sort</span>
+        <div class="filter-pills">
+          <a href="/top?sort=reactions&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'reactions' }}">❤ Reactions</a>
+          <a href="/top?sort=replies&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'replies' }}">💬 Replies</a>
+          <a href="/top?sort=score&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'score' }}">✨ Score</a>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group">
+        <span class="filter-label">When</span>
+        <div class="filter-pills">
+          <a href="/top?sort={{ sort_key }}&range=all&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'all' }}">All Time</a>
+          <a href="/top?sort={{ sort_key }}&range=year&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'year' }}">This Year</a>
+          <a href="/top?sort={{ sort_key }}&range=month&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'month' }}">This Month</a>
+          <a href="/top?sort={{ sort_key }}&range=week&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if range_key == 'week' }}">This Week</a>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="card" style="padding: 14px 20px; margin-bottom: 16px; display:flex; gap:20px; flex-wrap:wrap; align-items:center;">
-    <span style="font-size:0.82rem; color:#666;">Showing top <strong>{{ n }}</strong> of <strong>{{ "{:,}".format(total) }}</strong> posts</span>
-    <span style="font-size:0.82rem; color:#666;">&middot; Best score: <strong style="color:#EF7C00;">{{ posts[0].score if posts else 0 }}</strong></span>
-    <div style="margin-left:auto; display:flex; gap:6px;">
-      <a href="/top?range={{ range_key }}&n=25" style="text-decoration:none; font-size:0.78rem; padding:8px 14px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 25 }}">25</a>
-      <a href="/top?range={{ range_key }}&n=50" style="text-decoration:none; font-size:0.78rem; padding:8px 14px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 50 }}">50</a>
-      <a href="/top?range={{ range_key }}&n=100" style="text-decoration:none; font-size:0.78rem; padding:8px 14px; border-radius:12px; border:1.5px solid #ddd; color:#555; {{ 'background:#003D7C; color:#fff; border-color:#003D7C;' if n == 100 }}">100</a>
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+    <p class="results-meta" style="margin:0;">
+      {% if q %}
+        <strong>{{ posts|length }}</strong> results for <strong>"{{ q }}"</strong>
+        &middot; <a href="/top?sort={{ sort_key }}&range={{ range_key }}&n={{ n }}" class="link-blue" style="font-size:0.83rem;">clear</a>
+      {% else %}
+        Top <strong>{{ n }}</strong> of <strong>{{ "{:,}".format(total) }}</strong>
+        {% if posts %}
+          {% if sort_key == 'reactions' %}&middot; most liked: <strong style="color:var(--orange);">{{ posts[0].reactions_count }}</strong>
+          {% elif sort_key == 'replies' %}&middot; most discussed: <strong style="color:var(--orange);">{{ posts[0].reply_count }}</strong>
+          {% else %}&middot; best score: <strong style="color:var(--orange);">{{ posts[0].score }}</strong>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </p>
+    <div style="display:flex; gap:6px;">
+      <a href="/top?range={{ range_key }}&sort={{ sort_key }}&n=25{% if q %}&q={{ q|urlencode }}{% endif %}" class="n-pill {{ 'active' if n == 25 }}">25</a>
+      <a href="/top?range={{ range_key }}&sort={{ sort_key }}&n=50{% if q %}&q={{ q|urlencode }}{% endif %}" class="n-pill {{ 'active' if n == 50 }}">50</a>
+      <a href="/top?range={{ range_key }}&sort={{ sort_key }}&n=100{% if q %}&q={{ q|urlencode }}{% endif %}" class="n-pill {{ 'active' if n == 100 }}">100</a>
     </div>
   </div>
 
@@ -29,23 +71,24 @@
     <div class="confession-card">
       <div class="rank-num {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">{{ loop.index }}</div>
       <div class="c-body">
-        {% if p.title %}<div class="c-title">{{ p.title }}</div>{% endif %}
-        <div class="c-text">{{ p.excerpt }}</div>
+        {% if p.title %}
+          <div class="c-title">{% if q %}{{ p.title | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}{% else %}{{ p.title }}{% endif %}</div>
+        {% endif %}
+        <div class="c-text">{% if q %}{{ p.excerpt | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}{% else %}{{ p.excerpt }}{% endif %}</div>
         <div class="c-meta">
-          <span class="score-tag" title="Score = reactions × 3 + replies × 2 + forwards">Score {{ p.score }}</span>
           {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
           <span aria-label="{{ p.reactions_count }} reactions">❤️ {{ p.reactions_count }}</span>
           <span aria-label="{{ p.reply_count }} replies">💬 {{ p.reply_count }}</span>
           <span aria-label="{{ p.forwards }} forwards">↗ {{ p.forwards }}</span>
           <span aria-label="{{ '{:,}'.format(p.views or 0) }} views">👁 {{ "{:,}".format(p.views or 0) }}</span>
           <span>{{ p.date[:10] }}</span>
-          {% if p.confession_id %}<span style="color:#bbb;">#{{ p.confession_id }}</span>{% endif %}
+          {% if p.confession_id %}<span style="color:#ccc;">#{{ p.confession_id }}</span>{% endif %}
         </div>
       </div>
     </div>
     </a>
     {% else %}
-    <div class="empty">No posts found for this range.</div>
+    <div class="empty">{% if q %}No results for "{{ q }}".{% else %}No posts found.{% endif %}</div>
     {% endfor %}
   </div>
 </div>

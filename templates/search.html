@@ -2,21 +2,21 @@
 {% block title %}Search — NUSConfessIT Dashboard{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Search Confessions</h1>
-  <p>Full-text search across {{ "{:,}".format(total_posts) }} confessions</p>
+  <h1>Search</h1>
+  <p>{{ "{:,}".format(total_posts) }} confessions</p>
 </div>
 <div class="container">
-  <div class="card">
-    <form method="get" action="/search">
-      <div class="search-bar">
-        <input type="text" name="q" value="{{ q }}" placeholder="Search confessions… e.g. 'relationship', 'CS2030', 'internship'" autofocus />
-        <button type="submit">Search</button>
-      </div>
-    </form>
+  <form method="get" action="/search" style="margin-bottom:28px;">
+    <div class="search-bar">
+      <input type="text" name="q" value="{{ q }}" placeholder="Try 'relationship', 'CS2030', 'internship'…" autofocus />
+      <button type="submit">Search</button>
+    </div>
+  </form>
 
-    {% if q %}
-      {% if results %}
-      <p style="font-size:0.82rem; color:#888; margin-bottom:16px;">{{ "{:,}".format(results|length) }} results for <strong>"{{ q }}"</strong></p>
+  {% if q %}
+    {% if results %}
+    <p class="results-meta">{{ "{:,}".format(results|length) }} results for <strong>"{{ q }}"</strong></p>
+    <div class="card">
       {% for p in results %}
       <a href="/post/{{ p.id }}" style="text-decoration:none; color:inherit; display:block;">
       <div class="confession-card">
@@ -24,23 +24,22 @@
           {% if p.title %}<div class="c-title">{{ p.title | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}</div>{% endif %}
           <div class="c-text">{{ p.excerpt | replace(q, '<mark>' ~ q ~ '</mark>') | safe }}</div>
           <div class="c-meta">
-            <span class="score-tag">Score {{ p.score }}</span>
             {% if p.category and p.category != 'Others' %}<span class="cat-tag">{{ p.category }}</span>{% endif %}
-            <span>❤️ {{ p.reactions_count }}</span>
-            <span>💬 {{ p.reply_count }}</span>
-            <span>↗ {{ p.forwards }}</span>
+            <span aria-label="{{ p.reactions_count }} reactions">❤️ {{ p.reactions_count }}</span>
+            <span aria-label="{{ p.reply_count }} replies">💬 {{ p.reply_count }}</span>
+            <span aria-label="{{ p.forwards }} forwards">↗ {{ p.forwards }}</span>
             <span>{{ p.date[:10] }}</span>
           </div>
         </div>
       </div>
       </a>
       {% endfor %}
-      {% else %}
-      <div class="empty">No results found for "{{ q }}".</div>
-      {% endif %}
+    </div>
     {% else %}
-      <div class="empty" style="padding: 20px 0 0;">Enter a search term above to find confessions.</div>
+    <div class="empty">No results for "{{ q }}".</div>
     {% endif %}
-  </div>
+  {% else %}
+  <div class="empty" style="padding:60px 0; color:#ccc;">Enter a term to search confessions.</div>
+  {% endif %}
 </div>
 {% endblock %}
