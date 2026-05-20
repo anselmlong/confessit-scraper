@@ -1,6 +1,6 @@
-# NUSConfessIT Daily Digest
+# NUSConfessIT Scraper + Dashboard + Fine-Tuning
 
-Scrapes the [NUSConfessIT Telegram channel](https://t.me/NUSConfessIT), stores messages in SQLite, runs sentiment analysis and NUS-specific topic classification, and generates a self-contained daily HTML report — all from a student's point of view.
+Scrapes the [NUSConfessIT Telegram channel](https://t.me/NUSConfessIT), stores messages in SQLite, runs sentiment analysis and NUS-specific topic classification, generates self-contained daily HTML reports, provides a live web dashboard, and fine-tunes LLMs on confession data.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -14,13 +14,9 @@ Scrapes the [NUSConfessIT Telegram channel](https://t.me/NUSConfessIT), stores m
    - Sentiment score (positive / neutral / negative) via VADER
    - Topic classification into 6 NUS-specific buckets
    - Word frequency and engagement metrics
-4. **Generates** a daily HTML report with:
-   - TL;DR bullet summary of the day's vibe
-   - Mood-o-meter (sentiment breakdown)
-   - Hot topics ranking
-   - Top words / word cloud
-   - Posting activity by hour
-   - Confession highlights (most positive & most negative)
+4. **Generates** a daily HTML report with charts
+5. **Serves** a live web dashboard with browsing, search, and per-post detail views
+6. **Fine-tunes** Qwen 2.5 7B on confession-style posts via QLoRA (Unsloth)
 
 ---
 
@@ -90,7 +86,7 @@ Edit `.env`:
 ```env
 TELEGRAM_API_ID=12345678
 TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
-TELEGRAM_PHONE=+6512345678
+TELEGRAM_PHONE=+651****5678
 ```
 
 > On first run, Telethon will send a login code to your Telegram app. Enter it when prompted. The session is saved to `sessions/` so you only need to do this once.
@@ -130,35 +126,102 @@ python report.py --no-charts
 
 Reports are saved to `reports/YYYY-MM-DD_digest.html`.
 
+### Web Dashboard
+
+A live Flask dashboard for browsing, searching, and exploring confessions.
+
+```bash
+# Start the dashboard (default port 5000)
+python server.py
+
+# Custom port
+python server.py --port 8080
+```
+
+Open `http://localhost:5000` in your browser.
+
+**Features:**
+- Top confessions by reactions, replies, or custom score
+- Time range filters (week / month / year / all)
+- Full-text search across titles and body text
+- Per-post detail page with all inline and discussion-group replies
+- Overview stats (total posts, engagement, monthly activity chart)
+- Telegram Markdown rendered to HTML
+
+### Fine-Tuning (QLoRA)
+
+Train a confess-style text generator using Unsloth + QLoRA on the scraped data.
+
+```bash
+# 1. Export training data from SQLite
+python export_training_data.py
+
+# 2. Train on a single GPU
+python finetune_confessit.py \
+    --data data/confessions.jsonl \
+    --output ./outputs \
+    --epochs 3 \
+    --lr 2e-4 \
+    --batch-size 2 \
+    --grad-accum 4 \
+    --max-seq-length 512 \
+    --lora-r 16
+
+# 3. Push to HuggingFace Hub
+python finetune_confessit.py \
+    --data data/confessions.jsonl \
+    --hf-token hf_xxxx \
+    --hf-repo your-username/confessit-qwen-2.5-7b-lora
+```
+
+**SLURM cluster:** submit via sbatch:
+
+```bash
+sbatch slurm_finetune.sh
+```
+
+**Colab:** open `unsloth-finetune.ipynb` in Google Colab (T4 free tier works).
+
 ---
 
 ## Project Structure
 
 ```
 confessit-scraper/
-├── scrape.py                  # CLI: scrape and store messages
-├── report.py                  # CLI: generate daily HTML report
+├── scrape.py                       # CLI: scrape and store messages
+├── report.py                       # CLI: generate daily HTML report
+├── server.py                       # CLI: web dashboard (Flask)
+├── export_training_data.py         # Export SQLite -> causal LM JSONL
+├── finetune_confessit.py           # Unsloth QLoRA training script
+├── slurm_finetune.sh               # SLURM sbatch wrapper for training
+├── unsloth-finetune.ipynb          # Colab-ready fine-tuning notebook
 ├── requirements.txt
 ├── .env.example
+├── FINETUNE_SETUP.md               # Fine-tuning setup & config reference
 │
 ├── src/
 │   ├── scraper/
-│   │   └── telegram_scraper.py    # Telethon-based async scraper
+│   │   └── telegram_scraper.py     # Telethon-based async scraper
 │   ├── storage/
-│   │   └── db.py                  # SQLite layer (init, save, query)
+│   │   └── db.py                   # SQLite layer (init, save, query)
 │   ├── analysis/
-│   │   ├── processor.py           # Text cleaning, metadata, word freq
-│   │   ├── sentiment.py           # VADER sentiment + topic classifier
-│   │   ├── stats.py               # Daily stats, trends, engagement
-│   │   └── visualizations.py     # matplotlib/seaborn/wordcloud charts
+│   │   ├── processor.py            # Text cleaning, metadata, word freq
+│   │   ├── sentiment.py            # VADER sentiment + topic classifier
+│   │   ├── stats.py                # Daily stats, trends, engagement
+│   │   └── visualizations.py       # matplotlib/seaborn/wordcloud charts
 │   └── reporting/
-│       └── report.py              # Jinja2 HTML report generator
+│       └── report.py               # Jinja2 HTML report generator
+│
+├── templates/
+│   └── index.html                  # Dashboard main page
+│   └── post.html                   # Dashboard per-post detail
 │
 ├── reports/
-│   └── template.html              # Jinja2 template (NUS-branded)
+│   └── template.html               # Jinja2 report template (NUS-branded)
 │
-├── data/                          # SQLite DB (gitignored)
-└── sessions/                      # Telegram session files (gitignored)
+└── data/
+    ├── messages.db                 # SQLite DB (gitignored)
+    └── confessions.jsonl           # Exported training data
 ```
 
 ---
@@ -187,6 +250,9 @@ Use cron to scrape and report automatically:
 | `pandas` | Data manipulation |
 | `python-dotenv` | `.env` credential loading |
 | `rich` | Pretty CLI output |
+| `flask` + `markupsafe` | Web dashboard |
+| `unsloth` | QLoRA fine-tuning |
+| `transformers` + `datasets` + `trl` + `peft` + `bitsandbytes` | Training stack |
 
 ---
 
