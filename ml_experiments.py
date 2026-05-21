@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-ML experiments: predict reaction count class from confession post text + metadata.
+ML experiments: predict reaction count from confession post text + metadata.
 
-Target: reactions_count binned into 3 classes
-  - low    (0-2)   ~50th percentile
-  - medium (3-9)   ~75th-90th percentile
-  - high   (10+)   top tier
+Two tracks:
+  - Classification: reactions_count binned into low/medium/high
+  - Regression:    predict raw reactions_count (MAE, RMSE, R²)
 
 Steps:
   1. Export CSV with features
   2. Feature engineering (TF-IDF + metadata + sentiment + text stats)
-  3. Train 7 classifiers with cross-validation
-  4. Report F1 scores, pick best model
+  3. Train classifiers + regressors with cross-validation
+  4. Report results, pick best models
 """
 
 import sqlite3
@@ -25,17 +24,23 @@ import numpy as np
 import pandas as pd
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, KFold, cross_val_score
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.base import BaseEstimator, TransformerMixin
+# Classifiers
 from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB, ComplementNB
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
+from sklearn.naive_bayes import ComplementNB
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import classification_report, f1_score
+# Regressors
+from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import xgboost as xgb
 import lightgbm as lgb
 
@@ -82,7 +87,7 @@ def extract_confession_text(raw: str) -> str | None:
         return match.group(1).strip()
     return clean_body(raw)
 
-# ─── Label binning ────────────────────────────────────────────────────────────
+# ─── Label binning (classification only) ──────────────────────────────────────
 
 def bin_reactions(n: int) -> str:
     if n <= 2:
@@ -244,14 +249,12 @@ class TextSelector(BaseEstimator, TransformerMixin):
         return X["confession_text"].fillna("").values
 
 
-# ─── Step 3: ML Experiments ───────────────────────────────────────────────────
-
 RESULTS_DIR = Path(__file__).parent / "data" / "ml_results"
-SUMMARY_CSV = RESULTS_DIR / "summary.csv"
+SUMMARY_CLF_CSV = RESULTS_DIR / "summary.csv"
+SUMMARY_REG_CSV = RESULTS_DIR / "regression_summary.csv"
 
 TFIDF_KWARGS = dict(ngram_range=(1, 1), max_features=3000, sublinear_tf=True, min_df=3)
 LABEL_ORDER = ["low", "medium", "high"]
-
 
 def make_feature_pipeline(clf, scale_meta=False):
     steps = [
@@ -267,8 +270,9 @@ def make_feature_pipeline(clf, scale_meta=False):
     steps.append(("clf", clf))
     return Pipeline(steps)
 
+# ─── Classification models ────────────────────────────────────────────────────
 
-def get_models():
+def get_classifiers():
     return {
         "logistic_regression": make_feature_pipeline(
             LogisticRegression(max_iter=500, C=1.0, solver="lbfgs"), scale_meta=True
@@ -303,21 +307,50 @@ def get_models():
         ),
     }
 
+# ─── Regression models ────────────────────────────────────────────────────────
 
-def run_one_model(name: str, pipeline, df: pd.DataFrame, y: np.ndarray,
-                  cv: StratifiedKFold) -> dict:
-    """Run CV for one model, write results to its own file, return summary dict."""
+def get_regressors():
+    return {
+        "ridge": make_feature_pipeline(
+            Ridge(alpha=1.0), scale_meta=True
+        ),
+        "random_forest_regressor": make_feature_pipeline(
+            RandomForestRegressor(n_estimators=100, max_depth=8, random_state=42, n_jobs=-1)
+        ),
+        "gradient_boosting_regressor": make_feature_pipeline(
+            GradientBoostingRegressor(n_estimators=80, max_depth=3, learning_rate=0.15,
+                                       random_state=42, subsample=0.8)
+        ),
+        "xgboost_regressor": make_feature_pipeline(
+            xgb.XGBRegressor(n_estimators=80, max_depth=4, learning_rate=0.15,
+                              eval_metric="rmse", random_state=42, n_jobs=-1)
+        ),
+        "lightgbm_regressor": make_feature_pipeline(
+            lgb.LGBMRegressor(n_estimators=80, max_depth=4, learning_rate=0.15,
+                               random_state=42, n_jobs=-1, verbose=-1)
+        ),
+        "mlp_regressor": make_feature_pipeline(
+            MLPRegressor(hidden_layer_sizes=(128, 64), max_iter=300, random_state=42,
+                          early_stopping=True, validation_fraction=0.1,
+                          learning_rate_init=0.001), scale_meta=True
+        ),
+    }
+
+# ─── Run classification ────────────────────────────────────────────────────────
+
+def run_one_classifier(name: str, pipeline, df: pd.DataFrame, y: np.ndarray,
+                       cv: StratifiedKFold):
     from sklearn.model_selection import train_test_split
 
     out_path = RESULTS_DIR / f"{name}.txt"
     print(f"  Running {name}...", flush=True)
 
-    f1_macro_scores = cross_val_score(pipeline, df, y, cv=cv, scoring="f1_macro", n_jobs=1)
-    f1_weighted_scores = cross_val_score(pipeline, df, y, cv=cv, scoring="f1_weighted", n_jobs=1)
+    f1_macro = cross_val_score(pipeline, df, y, cv=cv, scoring="f1_macro", n_jobs=1)
+    f1_weighted = cross_val_score(pipeline, df, y, cv=cv, scoring="f1_weighted", n_jobs=1)
 
-    mean_macro = f1_macro_scores.mean()
-    std_macro = f1_macro_scores.std()
-    mean_weighted = f1_weighted_scores.mean()
+    mean_macro = f1_macro.mean()
+    std_macro = f1_macro.std()
+    mean_weighted = f1_weighted.mean()
 
     # Per-class breakdown on a held-out 20%
     X_train, X_test, y_train, y_test = train_test_split(
@@ -338,13 +371,12 @@ def run_one_model(name: str, pipeline, df: pd.DataFrame, y: np.ndarray,
         f.write(f"Model: {name}\n")
         f.write(f"CV F1-macro : {mean_macro:.4f} ± {std_macro:.4f}\n")
         f.write(f"CV F1-weighted: {mean_weighted:.4f}\n")
-        f.write(f"CV fold scores: {np.round(f1_macro_scores, 4).tolist()}\n\n")
+        f.write(f"CV fold scores: {np.round(f1_macro, 4).tolist()}\n\n")
         f.write("Classification report (80/20 hold-out):\n")
         f.write(report)
 
-    # Append one row to the running summary CSV
-    summary_exists = SUMMARY_CSV.exists()
-    with open(SUMMARY_CSV, "a", newline="") as f:
+    summary_exists = SUMMARY_CLF_CSV.exists()
+    with open(SUMMARY_CLF_CSV, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=result.keys())
         if not summary_exists:
             writer.writeheader()
@@ -355,52 +387,135 @@ def run_one_model(name: str, pipeline, df: pd.DataFrame, y: np.ndarray,
     return result
 
 
-def run_experiments(df: pd.DataFrame):
+def run_classification(df: pd.DataFrame):
     print("=" * 60)
-    print("STEP 2: ML Experiments")
+    print("CLASSIFICATION: predict reaction label (low/medium/high)")
     print("=" * 60)
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    SUMMARY_CSV.unlink(missing_ok=True)  # fresh run
+    SUMMARY_CLF_CSV.unlink(missing_ok=True)
 
     y = np.array([LABEL_ORDER.index(l) for l in df["reaction_label"]])
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-    print(f"\nResults will be written to {RESULTS_DIR}/\n")
+    print(f"\nResults → {RESULTS_DIR}/\n")
 
     results = []
-    for name, pipeline in get_models().items():
+    for name, pipeline in get_classifiers().items():
         try:
-            result = run_one_model(name, pipeline, df, y, cv)
+            result = run_one_classifier(name, pipeline, df, y, cv)
             results.append(result)
         except Exception as e:
             print(f"  ERROR in {name}: {e}", flush=True)
 
     results_df = pd.DataFrame(results).sort_values("f1_macro_mean", ascending=False)
-
     print()
-    print("=" * 60)
-    print("RESULTS SUMMARY (ranked by CV F1-macro)")
-    print("=" * 60)
     print(results_df.to_string(index=False))
+    return results_df
 
-    best = results_df.iloc[0]
-    return results_df, best["model"]
+# ─── Run regression ────────────────────────────────────────────────────────────
 
+def run_one_regressor(name: str, pipeline, df: pd.DataFrame, y: np.ndarray,
+                      cv: KFold):
+    from sklearn.model_selection import cross_validate
+
+    out_path = RESULTS_DIR / f"{name}.txt"
+    print(f"  Running {name}...", flush=True)
+
+    scoring = {"mae": "neg_mean_absolute_error",
+               "rmse": "neg_root_mean_squared_error",
+               "r2": "r2"}
+    scores = cross_validate(pipeline, df, y, cv=cv, scoring=scoring, n_jobs=1)
+
+    mae = -scores["test_mae"].mean()
+    mae_std = scores["test_mae"].std()
+    rmse = -scores["test_rmse"].mean()
+    rmse_std = scores["test_rmse"].std()
+    r2 = scores["test_r2"].mean()
+    r2_std = scores["test_r2"].std()
+
+    # Hold-out 20% for detail
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(
+        df, y, test_size=0.2, random_state=42
+    )
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+
+    result = {
+        "model": name,
+        "mae": round(mae, 4),
+        "mae_std": round(mae_std, 4),
+        "rmse": round(rmse, 4),
+        "rmse_std": round(rmse_std, 4),
+        "r2": round(r2, 4),
+        "r2_std": round(r2_std, 4),
+    }
+
+    with open(out_path, "w") as f:
+        f.write(f"Model: {name}\n")
+        f.write(f"CV MAE  : {mae:.4f} ± {mae_std:.4f}\n")
+        f.write(f"CV RMSE : {rmse:.4f} ± {rmse_std:.4f}\n")
+        f.write(f"CV R²   : {r2:.4f} ± {r2_std:.4f}\n")
+        f.write(f"CV fold MAE scores: {np.round(-scores['test_mae'], 4).tolist()}\n\n")
+        f.write("Hold-out 80/20:\n")
+        f.write(f"  MAE  : {mean_absolute_error(y_test, y_pred):.4f}\n")
+        f.write(f"  RMSE : {np.sqrt(mean_squared_error(y_test, y_pred)):.4f}\n")
+        f.write(f"  R²   : {r2_score(y_test, y_pred):.4f}\n")
+
+    summary_exists = SUMMARY_REG_CSV.exists()
+    with open(SUMMARY_REG_CSV, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=result.keys())
+        if not summary_exists:
+            writer.writeheader()
+        writer.writerow(result)
+
+    print(f"  {name:<28} MAE={mae:.2f}±{mae_std:.2f}  RMSE={rmse:.2f}±{rmse_std:.2f}  "
+          f"R²={r2:.4f}±{r2_std:.4f}  → {out_path.name}", flush=True)
+    return result
+
+
+def run_regression(df: pd.DataFrame):
+    print("\n" + "=" * 60)
+    print("REGRESSION: predict raw reactions_count")
+    print("=" * 60)
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    y = df["reactions_count"].values.astype(float)
+    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    print(f"\nResults → {RESULTS_DIR}/\n")
+
+    results = []
+    for name, pipeline in get_regressors().items():
+        try:
+            result = run_one_regressor(name, pipeline, df, y, cv)
+            results.append(result)
+        except Exception as e:
+            print(f"  ERROR in {name}: {e}", flush=True)
+
+    results_df = pd.DataFrame(results).sort_values("mae", ascending=True)
+    print()
+    print(results_df.to_string(index=False))
+    return results_df
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     df = export_csv()
-    results_df, best_name = run_experiments(df)
+    clf_results = run_classification(df)
+    reg_results = run_regression(df)
 
     print()
     print("=" * 60)
-    print(f"WINNER: {best_name}")
-    print(f"  F1-macro : {results_df.iloc[0]['f1_macro_mean']:.4f} "
-          f"± {results_df.iloc[0]['f1_macro_std']:.4f}")
-    print(f"  F1-weighted: {results_df.iloc[0]['f1_weighted_mean']:.4f}")
-    print(f"\nPer-model reports in: {RESULTS_DIR}/")
-    print(f"Summary CSV: {SUMMARY_CSV}")
+    print("FINAL RESULTS")
     print("=" * 60)
-    print("=" * 60)
+    print()
+    print("CLASSIFICATION (F1-macro leaderboard):")
+    print(clf_results.to_string(index=False))
+    print()
+    print("REGRESSION (MAE leaderboard — lower is better):")
+    print(reg_results.to_string(index=False))
+    print()
+    print(f"Full results: {RESULTS_DIR}/")
