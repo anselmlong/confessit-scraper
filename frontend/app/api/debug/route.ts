@@ -20,8 +20,14 @@ export async function GET() {
 
   try {
     const Database = (await import('better-sqlite3')).default;
-    const uri = `file:${dbPath.replace(/\\/g, '/')}?mode=ro&immutable=1`;
-    const db = new Database(uri, { readonly: true });
+    let db: InstanceType<typeof Database>;
+    try {
+      db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    } catch {
+      const tmp = '/tmp/confessit-messages.db';
+      if (!fs.existsSync(tmp)) fs.copyFileSync(dbPath, tmp);
+      db = new Database(tmp, { readonly: true, fileMustExist: true });
+    }
     const row = db.prepare('SELECT COUNT(*) as cnt FROM messages WHERE is_reply=0').get() as { cnt: number };
     db.close();
     return NextResponse.json({ ...checks, fileSize, dbQueryOk: true, count: row.cnt });
