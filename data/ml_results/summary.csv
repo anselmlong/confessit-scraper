@@ -1,0 +1,9 @@
+model,f1_macro_mean,f1_macro_std,f1_weighted_mean
+logistic_regression,0.4182,0.0239,0.5222
+complement_naive_bayes,0.442,0.0133,0.544
+linear_svm,0.4036,0.0255,0.5078
+random_forest,0.2755,0.0069,0.4518
+gradient_boosting,0.4221,0.0098,0.5484
+xgboost,0.432,0.0069,0.5623
+lightgbm,0.4372,0.0149,0.5664
+mlp_neural_net,0.4134,0.0216,0.5358

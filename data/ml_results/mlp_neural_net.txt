@@ -1,0 +1,15 @@
+Model: mlp_neural_net
+CV F1-macro : 0.4134 ± 0.0216
+CV F1-weighted: 0.5358
+CV fold scores: [0.4113, 0.4307, 0.4077, 0.3774, 0.4398]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.63      0.71      0.67       469
+      medium       0.40      0.38      0.39       274
+        high       0.29      0.13      0.18        76
+
+    accuracy                           0.54       819
+   macro avg       0.44      0.41      0.41       819
+weighted avg       0.52      0.54      0.53       819

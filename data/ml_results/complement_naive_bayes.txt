@@ -1,0 +1,15 @@
+Model: complement_naive_bayes
+CV F1-macro : 0.4420 ± 0.0133
+CV F1-weighted: 0.5440
+CV fold scores: [0.4283, 0.4413, 0.4357, 0.4375, 0.4671]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.68      0.64      0.66       469
+      medium       0.40      0.41      0.40       274
+        high       0.20      0.24      0.22        76
+
+    accuracy                           0.53       819
+   macro avg       0.42      0.43      0.43       819
+weighted avg       0.54      0.53      0.53       819

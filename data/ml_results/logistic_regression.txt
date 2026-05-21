@@ -1,0 +1,15 @@
+Model: logistic_regression
+CV F1-macro : 0.4182 ± 0.0239
+CV F1-weighted: 0.5222
+CV fold scores: [0.4243, 0.409, 0.4206, 0.3816, 0.4555]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.64      0.65      0.65       469
+      medium       0.37      0.40      0.39       274
+        high       0.26      0.14      0.19        76
+
+    accuracy                           0.52       819
+   macro avg       0.42      0.40      0.41       819
+weighted avg       0.51      0.52      0.52       819

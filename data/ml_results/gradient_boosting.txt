@@ -1,0 +1,15 @@
+Model: gradient_boosting
+CV F1-macro : 0.4221 ± 0.0098
+CV F1-weighted: 0.5484
+CV fold scores: [0.4243, 0.4257, 0.4032, 0.4322, 0.425]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.64      0.88      0.74       469
+      medium       0.47      0.27      0.35       274
+        high       0.31      0.07      0.11        76
+
+    accuracy                           0.60       819
+   macro avg       0.47      0.41      0.40       819
+weighted avg       0.55      0.60      0.55       819
