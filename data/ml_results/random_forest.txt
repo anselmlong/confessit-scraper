@@ -1,0 +1,15 @@
+Model: random_forest
+CV F1-macro : 0.2755 ± 0.0069
+CV F1-weighted: 0.4518
+CV fold scores: [0.2803, 0.2737, 0.2851, 0.2738, 0.2648]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.58      0.99      0.73       469
+      medium       0.60      0.05      0.10       274
+        high       0.00      0.00      0.00        76
+
+    accuracy                           0.58       819
+   macro avg       0.39      0.35      0.28       819
+weighted avg       0.54      0.58      0.45       819

@@ -1,0 +1,15 @@
+Model: lightgbm
+CV F1-macro : 0.4372 ± 0.0149
+CV F1-weighted: 0.5664
+CV fold scores: [0.4636, 0.4246, 0.432, 0.4231, 0.4427]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.65      0.89      0.75       469
+      medium       0.51      0.31      0.38       274
+        high       0.64      0.09      0.16        76
+
+    accuracy                           0.62       819
+   macro avg       0.60      0.43      0.43       819
+weighted avg       0.60      0.62      0.57       819

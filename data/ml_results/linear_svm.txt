@@ -1,0 +1,15 @@
+Model: linear_svm
+CV F1-macro : 0.4036 ± 0.0255
+CV F1-weighted: 0.5078
+CV fold scores: [0.4089, 0.3752, 0.4028, 0.3828, 0.4482]
+
+Classification report (80/20 hold-out):
+              precision    recall  f1-score   support
+
+         low       0.64      0.63      0.64       469
+      medium       0.38      0.42      0.40       274
+        high       0.22      0.14      0.17        76
+
+    accuracy                           0.52       819
+   macro avg       0.41      0.40      0.40       819
+weighted avg       0.51      0.52      0.51       819
