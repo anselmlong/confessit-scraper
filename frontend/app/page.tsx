@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { Nav } from '@/components/Nav';
 import { FilterBar } from '@/components/FilterBar';
 import { ConfessionCard } from '@/components/ConfessionCard';
@@ -22,7 +25,7 @@ export default async function Home({
     : 'reactions';
   const range: RangeKey = VALID_RANGES.includes(sp.range as RangeKey)
     ? (sp.range as RangeKey)
-    : 'week';
+    : 'month';
   const n = Math.min(Math.max(parseInt(sp.n ?? '25', 10) || 25, 1), 200);
   const q = (sp.q ?? '').trim();
 
