@@ -63,7 +63,7 @@ export function getPosts({
   limit?: number;
 }): Post[] {
   const db = getDb();
-  const days = RANGE_DAYS[range] ?? RANGE_DAYS.week;
+  const days = range in RANGE_DAYS ? RANGE_DAYS[range] : RANGE_DAYS.week;
   const orderExpr = SORTS[sort] ?? SORTS.reactions;
 
   let sql = `SELECT *, ${SCORE} AS score FROM messages WHERE is_reply=0`;
@@ -93,7 +93,7 @@ export function getPosts({
 
 export function getPostCount({ range = 'week', q }: { range?: string; q?: string }): number {
   const db = getDb();
-  const days = RANGE_DAYS[range] ?? RANGE_DAYS.week;
+  const days = range in RANGE_DAYS ? RANGE_DAYS[range] : RANGE_DAYS.week;
 
   let sql = 'SELECT COUNT(*) AS cnt FROM messages WHERE is_reply=0';
   const params: (string | number)[] = [];
@@ -133,7 +133,7 @@ export function getStats(): Stats {
   };
 
   const { cnt: totalReplies } = db.prepare(
-    'SELECT COUNT(*) AS cnt FROM replies'
+    'SELECT COUNT(*) AS cnt FROM messages WHERE is_reply=1'
   ).get() as { cnt: number };
 
   const firstDate = (raw.first_date ?? '').slice(0, 10);
@@ -179,19 +179,15 @@ export function getPost(id: number): Post | null {
 
 export function getReplies(postId: number): Reply[] {
   const db = getDb();
-  const inline = db.prepare(
-    'SELECT * FROM messages WHERE reply_to_msg_id=? ORDER BY date ASC'
+  return db.prepare(
+    'SELECT * FROM messages WHERE reply_to_msg_id=? AND is_reply=1 ORDER BY date ASC'
   ).all(postId) as Reply[];
-  const discussion = db.prepare(
-    'SELECT * FROM replies WHERE post_id=? ORDER BY date ASC'
-  ).all(postId) as Reply[];
-  return [...inline, ...discussion];
 }
 
 export function getTotalInGroup(postId: number): number {
   const db = getDb();
   const row = db.prepare(
-    'SELECT COUNT(*) AS cnt FROM replies WHERE post_id=?'
+    'SELECT COUNT(*) AS cnt FROM messages WHERE reply_to_msg_id=? AND is_reply=1'
   ).get(postId) as { cnt: number };
   return row.cnt;
 }
