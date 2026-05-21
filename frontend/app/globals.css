@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* Design tokens — NUS blue + orange palette */
+@layer base {
+  :root {
+    --bg:           #f4f6f9;
+    --surface:      #ffffff;
+    --surface-alt:  #f8f9fb;
+    --surface-mid:  #eef1f6;
+    --text-1:       #1e2428;
+    --text-2:       #4a5568;
+    --text-3:       #6b7a8e;
+    --text-muted:   #9aa5b4;
+    --border:       #e6eaf0;
+    --border-light: #f0f2f6;
+    --blue:         #003D7C;
+    --blue-mid:     #00509E;
+    --blue-light:   #e8f0fe;
+    --orange:       #EF7C00;
+    --mark-bg:      #fff3cc;
+  }
+
+  .dark {
+    --bg:           #0d1520;
+    --surface:      #131d2c;
+    --surface-alt:  #18243a;
+    --surface-mid:  #1e2d42;
+    --text-1:       #dce6f4;
+    --text-2:       #8ba0bc;
+    --text-3:       #617186;
+    --text-muted:   #445568;
+    --border:       #1e2d42;
+    --border-light: #172030;
+    --blue:         #4d8fd6;
+    --blue-mid:     #5fa3ea;
+    --blue-light:   #0f2040;
+    --orange:       #f09020;
+    --mark-bg:      #4a3a10;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-1);
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.6;
+    transition: background-color 0.22s ease, color 0.22s ease;
+  }
+
+  mark {
+    background: var(--mark-bg);
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+
+  /* Reading zone (post page prose) */
+  .reading-zone p       { margin-bottom: 1.1em; }
+  .reading-zone p:last-child { margin-bottom: 0; }
+  .reading-zone ul      { margin: 0.2em 0 1.1em 1.6em; }
+  .reading-zone ul li   { margin-bottom: 0.4em; }
+  .reading-zone hr      { border: none; border-top: 1px solid var(--border); margin: 1.2em 0; }
+  .reading-zone code    { background: var(--surface-alt); border-radius: 4px; padding: 1px 6px; font-size: 0.9em; }
+  .reading-zone a       { color: var(--blue); }
+
+  /* Entrance animations */
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes bar-grow {
+    from { width: 0; opacity: 0.3; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+}
