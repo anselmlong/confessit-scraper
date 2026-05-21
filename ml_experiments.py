@@ -254,6 +254,7 @@ SUMMARY_CLF_CSV = RESULTS_DIR / "summary.csv"
 SUMMARY_REG_CSV = RESULTS_DIR / "regression_summary.csv"
 
 TFIDF_KWARGS = dict(ngram_range=(1, 1), max_features=3000, sublinear_tf=True, min_df=3)
+SUMMARY_REG_LOG_CSV = RESULTS_DIR / "regression_log_summary.csv"
 LABEL_ORDER = ["low", "medium", "high"]
 
 def make_feature_pipeline(clf, scale_meta=False):
@@ -500,12 +501,89 @@ def run_regression(df: pd.DataFrame):
     print(results_df.to_string(index=False))
     return results_df
 
+
+# ─── Regression with log1p target ─────────────────────────────────────────────
+
+def run_one_regressor_log(name: str, pipeline, df: pd.DataFrame, y: np.ndarray,
+                          cv: KFold):
+    """Regression on log1p(reactions). Metrics back-transformed to original scale."""
+    from sklearn.model_selection import cross_val_predict
+
+    out_path = RESULTS_DIR / f"{name}_log.txt"
+    print(f"  Running {name}_log...", flush=True)
+
+    y_log = np.log1p(y)
+    y_pred_log = cross_val_predict(pipeline, df, y_log, cv=cv, n_jobs=1, method="predict")
+    y_pred = np.expm1(y_pred_log)
+
+    mae = mean_absolute_error(y, y_pred)
+    rmse = np.sqrt(mean_squared_error(y, y_pred))
+    r2 = r2_score(y, y_pred)
+
+    # MAE on log scale for reference
+    mae_log = mean_absolute_error(y_log, y_pred_log)
+
+    result = {
+        "model": f"{name}_log",
+        "mae_original": round(mae, 4),
+        "rmse_original": round(rmse, 4),
+        "r2_original": round(r2, 4),
+        "mae_log": round(mae_log, 4),
+    }
+
+    with open(out_path, "w") as f:
+        f.write(f"Model: {name} (log1p target)\n\n")
+        f.write(f"CV MAE (log scale) : {mae_log:.4f}\n\n")
+        f.write("Back-transformed (original scale):\n")
+        f.write(f"  MAE  : {mae:.4f}\n")
+        f.write(f"  RMSE : {rmse:.4f}\n")
+        f.write(f"  R²   : {r2:.4f}\n")
+
+    summary_exists = SUMMARY_REG_LOG_CSV.exists()
+    with open(SUMMARY_REG_LOG_CSV, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=result.keys())
+        if not summary_exists:
+            writer.writeheader()
+        writer.writerow(result)
+
+    print(f"  {name + '_log':<28} MAE={mae:.2f}  RMSE={rmse:.2f}  "
+          f"R²={r2:.4f}  → {out_path.name}", flush=True)
+    return result
+
+
+def run_regression_log(df: pd.DataFrame):
+    print("\n" + "=" * 60)
+    print("REGRESSION (log1p target): predict log(reactions+1)")
+    print("=" * 60)
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    y = df["reactions_count"].values.astype(float)
+    cv = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    print(f"\nResults → {RESULTS_DIR}/\n")
+
+    results = []
+    for name, pipeline in get_regressors().items():
+        try:
+            result = run_one_regressor_log(name, pipeline, df, y, cv)
+            results.append(result)
+        except Exception as e:
+            print(f"  ERROR in {name}_log: {e}", flush=True)
+
+    results_df = pd.DataFrame(results).sort_values("mae_original", ascending=True)
+    print()
+    print(results_df.to_string(index=False))
+    return results_df
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     df = export_csv()
     clf_results = run_classification(df)
     reg_results = run_regression(df)
+    reg_log_results = run_regression_log(df)
 
     print()
     print("=" * 60)
@@ -515,7 +593,10 @@ if __name__ == "__main__":
     print("CLASSIFICATION (F1-macro leaderboard):")
     print(clf_results.to_string(index=False))
     print()
-    print("REGRESSION (MAE leaderboard — lower is better):")
+    print("REGRESSION raw (MAE leaderboard — lower is better):")
     print(reg_results.to_string(index=False))
+    print()
+    print("REGRESSION log1p (MAE on original scale — lower is better):")
+    print(reg_log_results.to_string(index=False))
     print()
     print(f"Full results: {RESULTS_DIR}/")
