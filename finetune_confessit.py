@@ -27,24 +27,24 @@ SLURM example (sbatch script):
     #SBATCH --gres=gpu:1
     #SBATCH --cpus-per-task=8
     #SBATCH --mem=32G
-    #SBATCH --time=02:00:00
+    #SBATCH --time=04:00:00
 
-    module load python/3.10
+    module load python/3.13
+    python3 -m venv venv
+    source venv/bin/activate
     pip install unsloth transformers datasets accelerate peft trl bitsandbytes
     python3 finetune_confessit.py --data confessions.jsonl --hf-token $HF_TOKEN
 """
 
 import argparse
-import json
 import os
 import sys
-from pathlib import Path
 
 import torch
+from unsloth import FastLanguageModel, is_bfloat16_supported
 from datasets import load_dataset
 from transformers import TrainingArguments
 from trl import SFTTrainer
-from unsloth import FastLanguageModel, is_bfloat16_supported
 
 
 def parse_args():
@@ -103,7 +103,7 @@ def load_and_prepare_data(data_path, test_size, seed, no_eval):
 
     if no_eval or test_size == 0:
         print(f"[*] Using all {len(dataset)} examples for training (no eval split)")
-        return dataset["train"], None if no_eval else dataset["train"]
+        return dataset, None
     else:
         split = dataset.train_test_split(test_size=test_size, seed=seed)
         train_dataset = split["train"]
@@ -131,8 +131,8 @@ def load_model(model_name, max_seq_length):
 
     if torch.cuda.is_available():
         total = torch.cuda.get_device_properties(0).total_memory / 1e9
-        free = torch.cuda.memory_reserved(0) / 1e9
-        print(f"[*] GPU: {total:.1f} GB total — {torch.cuda.mem_get_info()[0] / 1e9:.1f} GB free")
+        free, _ = torch.cuda.mem_get_info(0)
+        print(f"[*] GPU: {total:.1f} GB total — {free / 1e9:.1f} GB free")
 
     return model, tokenizer
 
@@ -166,7 +166,7 @@ def train(model, tokenizer, train_dataset, eval_dataset, args):
         fp16=not is_bfloat16_supported(),
         bf16=is_bfloat16_supported(),
         logging_steps=args.logging_steps,
-        evaluation_strategy="steps" if eval_dataset else "no",
+        eval_strategy="steps" if eval_dataset else "no",
         eval_steps=args.eval_steps if eval_dataset else None,
         save_strategy=args.save_strategy,
         output_dir=args.output,
@@ -202,10 +202,9 @@ def train(model, tokenizer, train_dataset, eval_dataset, args):
 
 def push_to_hub(model, tokenizer, repo_id, token):
     """Push LoRA adapter to HuggingFace Hub."""
-    from huggingface_hub import HfApi
-
     print(f"[*] Pushing adapter to HF Hub: {repo_id}")
-    model.push_to_hub(repo_id, tokenizer=tokenizer, private=False, token=token)
+    model.push_to_hub(repo_id, token=token)
+    tokenizer.push_to_hub(repo_id, token=token)
     print(f"[*] Pushed to: https://huggingface.co/{repo_id}")
 
 
