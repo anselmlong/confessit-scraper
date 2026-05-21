@@ -11,7 +11,10 @@ declare global {
 
 function getDb(): Database.Database {
   if (!global._confessitDb) {
-    global._confessitDb = new Database(DB_PATH, { readonly: true, fileMustExist: true });
+    // Use SQLite URI with immutable=1 so SQLite skips lock-file creation.
+    // This is required on Vercel where the function directory is read-only.
+    const uri = `file:${DB_PATH.replace(/\\/g, '/')}?mode=ro&immutable=1`;
+    global._confessitDb = new Database(uri, { readonly: true });
   }
   return global._confessitDb;
 }
