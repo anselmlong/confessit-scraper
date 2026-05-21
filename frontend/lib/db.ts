@@ -1,8 +1,7 @@
 import Database from 'better-sqlite3';
+import { copyFileSync, existsSync } from 'fs';
 import path from 'path';
 import type { Post, Reply, Stats, MonthlyCount } from './types';
-
-const DB_PATH = process.env.DB_PATH ?? path.join(process.cwd(), 'messages.db');
 
 declare global {
   // eslint-disable-next-line no-var
@@ -11,10 +10,17 @@ declare global {
 
 function getDb(): Database.Database {
   if (!global._confessitDb) {
-    // Use SQLite URI with immutable=1 so SQLite skips lock-file creation.
-    // This is required on Vercel where the function directory is read-only.
-    const uri = `file:${DB_PATH.replace(/\\/g, '/')}?mode=ro&immutable=1`;
-    global._confessitDb = new Database(uri, { readonly: true });
+    const srcPath = process.env.DB_PATH ?? path.join(process.cwd(), 'messages.db');
+    try {
+      // Try opening in place first (works in local dev)
+      global._confessitDb = new Database(srcPath, { readonly: true, fileMustExist: true });
+    } catch {
+      // Vercel Lambda: /var/task is read-only; SQLite needs a writable dir for lock
+      // files even in readonly mode. Copy the DB to /tmp and open from there.
+      const tmp = '/tmp/confessit-messages.db';
+      if (!existsSync(tmp)) copyFileSync(srcPath, tmp);
+      global._confessitDb = new Database(tmp, { readonly: true, fileMustExist: true });
+    }
   }
   return global._confessitDb;
 }
