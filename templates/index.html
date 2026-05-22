@@ -38,6 +38,7 @@
         <div class="filter-pills">
           <a href="/?sort=reactions&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'reactions' }}">❤ Reactions</a>
           <a href="/?sort=replies&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'replies' }}">💬 Replies</a>
+          <a href="/?sort=time&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'time' }}">🕐 Latest</a>
           <a href="/?sort=score&range={{ range_key }}&n={{ n }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{{ 'active' if sort_key == 'score' }}">✨ Score</a>
         </div>
       </div>
@@ -66,6 +67,7 @@
         {% if posts %}
           {% if sort_key == 'reactions' %}&middot; most liked: <strong style="color:var(--orange);">{{ posts[0].reactions_count }}</strong>
           {% elif sort_key == 'replies' %}&middot; most discussed: <strong style="color:var(--orange);">{{ posts[0].reply_count }}</strong>
+          {% elif sort_key == 'time' %}&middot; latest: <strong style="color:var(--orange);">{{ posts[0].date[:10] }}</strong>
           {% else %}&middot; best score: <strong style="color:var(--orange);">{{ posts[0].score }}</strong>
           {% endif %}
         {% endif %}
