@@ -1,6 +1,11 @@
 .env
 sessions/
 data/*.db
+data/ml_results/*.txt
+data/ml_results/*.csv
+data/ml_results_v2/
+data/*.npy
+data/*.csv
 __pycache__/
 *.pyc
 .venv/
@@ -10,8 +15,14 @@ reports/top_all.html
 reports/top_week.html
 reports/top_month.html
 reports/top_year.html
+reports/landscape/
 logs/
 *.egg-info/
 venv/
 .gstack/
 .vercel
+.hermes/
+.impeccable/
+messages.db
+get_best_params.py
+scripts/
