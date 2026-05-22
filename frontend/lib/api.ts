@@ -14,10 +14,13 @@ async function fetchJSON(url: string) {
 /* ── Posts ── */
 
 export async function getPosts(opts: {
-  sort: string; range: string; limit: number; q?: string;
+  sort: string; range: string; limit: number; q?: string; order?: string; start_date?: string; end_date?: string;
 }): Promise<Post[]> {
   const p = new URLSearchParams({ sort: opts.sort, range: opts.range, n: String(opts.limit) });
   if (opts.q) p.set('q', opts.q);
+  if (opts.order) p.set('order', opts.order);
+  if (opts.start_date) p.set('start_date', opts.start_date);
+  if (opts.end_date) p.set('end_date', opts.end_date);
   const data = await fetchJSON(`${API}/api/posts?${p}`);
   if (!data) return [];
   return data.map((d: any) => ({

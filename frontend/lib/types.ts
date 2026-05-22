@@ -49,4 +49,5 @@ export interface MonthlyCount {
 }
 
 export type SortKey = 'time' | 'reactions' | 'replies' | 'score';
-export type RangeKey = 'week' | 'month' | 'year' | 'all';
+export type RangeKey = 'week' | 'month' | 'year' | 'all' | 'custom';
+export type OrderKey = 'asc' | 'desc';
