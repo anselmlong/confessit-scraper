@@ -99,28 +99,6 @@ function OverviewStat({ val, lbl }: { val: string; lbl: string }) {
   );
 }
 
-function CatBar({ label, count, total, max }: { label: string; count: number; total: number; max: number }) {
-  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
-  return (
-    <div className="flex items-center gap-2.5 text-[0.8rem]">
-      <span className="w-28 text-right shrink-0 truncate" style={{ color: 'var(--text-2)' }} title={label}>
-        {label}
-      </span>
-      <div
-        className="h-[22px] rounded-sm min-w-[2px] transition-all"
-        style={{
-          width: `${(count / max) * 100}%`,
-          background: 'linear-gradient(90deg, var(--blue), var(--blue-mid))',
-        }}
-      />
-      <span style={{ color: 'var(--text-3)', minWidth: '3.5rem', textAlign: 'right' }}>
-        {count.toLocaleString()}
-      </span>
-      <span style={{ color: 'var(--text-muted)', minWidth: '3rem' }}>({pct}%)</span>
-    </div>
-  );
-}
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl p-5 shadow-sm mb-5" style={{ background: 'var(--surface)' }}>
@@ -253,12 +231,11 @@ export default async function StatsPage() {
   }));
 
   const maxMonthly = monthly.length > 0 ? Math.max(...monthly.map((m: { count: number }) => m.count), 1) : 1;
-  const maxCat = landscape?.categories
-    ? Math.max(...Object.values(landscape.categories), 1)
-    : 1;
-  const totalCat = landscape?.categories
-    ? Object.values(landscape.categories).reduce((a, b) => a + b, 0)
-    : 0;
+
+  // ML-derived regions from the embedding analysis, not raw categories
+  const regions = landscape?.cluster_taxonomy?.["4_main_regions"];
+  const regionsList = regions ? Object.entries(regions) : [];
+  const totalRegionPct = regionsList.reduce((a, [, v]) => a + v.size_pct, 0);
 
   return (
     <>
@@ -272,14 +249,14 @@ export default async function StatsPage() {
         <div className="max-w-5xl mx-auto">
           <h1 className="text-2xl font-bold">Channel Statistics &amp; Landscape</h1>
           <p className="text-white/75 mt-1.5 text-sm">
-            Embedding analysis, score distributions, category breakdowns, and viral insights
+            Embedding analysis, score distributions, ML-derived topic clusters, and viral insights
           </p>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 pb-16 pt-6 space-y-1">
 
-        {/* ── 1. Overview ──────────────────────────── */}
+        {/* ── 1. Overview ──────────────────────────────── */}
         {stats && (
           <Section title="Overview">
             <div
@@ -300,6 +277,11 @@ export default async function StatsPage() {
         {/* ── 2. Score Distribution ──────────────────── */}
         {landscape?.score_distribution && (
           <Section title="Score Distribution">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Engagement follows a <strong>long tail distribution</strong> — most posts score under 50,
+              while a tiny fraction of viral content captures the bulk of attention.
+            </p>
+            <img src="/blog/score_distribution.png" alt="Score distribution histogram" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="space-y-3">
               <div className="flex flex-wrap gap-4 text-[0.88rem]">
                 {[
@@ -364,64 +346,59 @@ export default async function StatsPage() {
           </Section>
         )}
 
-        {/* ── 3. Category Breakdown ──────────────────── */}
-        {landscape?.categories && (
-          <Section title="Category Breakdown">
-            <div className="space-y-2">
-              {Object.entries(landscape.categories)
-                .sort(([, a], [, b]) => b - a)
-                .map(([cat, count]) => (
-                  <CatBar key={cat} label={cat} count={count} total={totalCat} max={maxCat} />
-                ))}
+        {/* ── 3. ML-Derived Topic Regions ──────────────── */}
+        {regions && (
+          <Section title="Topic Regions (ML Clusters)">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Posts were embedded with <strong>{landscape?.cluster_taxonomy.embedding_model}</strong> and reduced
+              via UMAP. Instead of relying on user-applied tags (78% of posts are uncategorised), we used
+              <strong> Mean Shift + HDBSCAN</strong> clustering on the embeddings to discover <em>four</em> natural
+              topic regions that emerge from the content itself.
+            </p>
+            <TaxaTable regions={regions} />
+            <div className="text-[0.75rem] mt-1" style={{ color: 'var(--text-muted)' }}>
+              Method: {landscape?.cluster_taxonomy.method}
             </div>
           </Section>
         )}
 
-        {/* ── 4. Embedding Landscape ─────────────── */}
+        {/* ── 4. Embedding Landscape ───────────────────── */}
         {landscape?.cluster_taxonomy && (
           <Section title="Embedding Landscape">
-            <div className="space-y-4">
-              <p className="text-[0.88rem] leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                Posts were embedded with <strong>{landscape.cluster_taxonomy.embedding_model}</strong> and reduced
-                via UMAP. The space forms a <strong>continuous gradient</strong> — regions blend into one another
-                with no hard cluster boundaries.
-              </p>
-
-              <h3 className="text-[0.8rem] font-bold uppercase tracking-[0.8px]" style={{ color: 'var(--text-3)' }}>
-                4 Main Regions
-              </h3>
-              <TaxaTable regions={landscape.cluster_taxonomy["4_main_regions"]} />
-
-              <div className="text-[0.75rem] mt-1" style={{ color: 'var(--text-muted)' }}>
-                Method: {landscape.cluster_taxonomy.method}
-              </div>
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              The UMAP projection of all 72K confessions reveals a <strong>continuous gradient</strong> —
+              topics blend into one another with no hard boundaries. Viral posts (orange, right plot) 
+              concentrate in specific regions rather than being uniformly distributed.
+            </p>
+            <img src="/blog/umap_landscape.png" alt="UMAP embedding landscape" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <div className="text-[0.75rem]" style={{ color: 'var(--text-muted)' }}>
+              Method: {landscape.cluster_taxonomy.method}
             </div>
           </Section>
         )}
 
-        {/* ── 5. Viral Insights ──────────────────────── */}
+        {/* ── 5. Viral Insights ────────────────────────── */}
         {landscape && (
           <Section title="Viral Insights">
-            <div className="space-y-3">
-              <p className="text-[0.88rem] leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                Posts with a composite score above{' '}
-                <strong style={{ color: 'var(--orange)' }}>{landscape.viral_threshold}</strong> are
-                classified as <strong>viral</strong> (top {pctLabel(landscape.viral_rate)} of all posts).
-              </p>
-              <div
-                className="rounded-lg p-4 text-[0.88rem] leading-relaxed"
-                style={{ background: 'var(--surface-alt)', borderLeft: '4px solid var(--orange)' }}
-              >
-                <strong style={{ color: 'var(--orange)' }}>Key finding:</strong>{' '}
-                Dating &amp; relationship posts form the <strong>only consistent viral pocket</strong> —
-                ~70% of viral posts come from the dating region, versus a ~25% baseline across all other
-                regions. This suggests romantic content drives the highest engagement on NUSConfessIT.
-              </div>
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Posts with a composite score above{' '}
+              <strong style={{ color: 'var(--orange)' }}>{landscape.viral_threshold}</strong> are
+              classified as <strong>viral</strong> (top {pctLabel(landscape.viral_rate)} of all posts).
+            </p>
+            <img src="/blog/viral_by_category.png" alt="Viral rate by topic region" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <div
+              className="rounded-lg p-4 text-[0.88rem] leading-relaxed"
+              style={{ background: 'var(--surface-alt)', borderLeft: '4px solid var(--orange)' }}
+            >
+              <strong style={{ color: 'var(--orange)' }}>Key finding:</strong>{' '}
+              Dating &amp; relationship posts form the <strong>only consistent viral pocket</strong> —
+              ~70% of viral posts come from the dating region, versus a ~25% baseline across all other
+              regions. This suggests romantic content drives the highest engagement on NUSConfessIT.
             </div>
           </Section>
         )}
 
-        {/* ── 6. Top 10 Most Engaged Posts ──────────── */}
+        {/* ── 6. Top 10 Most Engaged Posts ──────────────── */}
         {landscape?.top_posts && landscape.top_posts.length > 0 && (
           <Section title="Top 10 Most Engaged Posts">
             <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
@@ -432,13 +409,31 @@ export default async function StatsPage() {
           </Section>
         )}
 
-        {/* ── 7. Monthly Activity ──────────────────────── */}
+        {/* ── 7. Monthly Activity ────────────────────────── */}
         {monthly.length > 0 && (
           <Section title="Monthly Activity">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              The channel has sustained <strong>3,000+ posts per month</strong> since late 2024 — 
+              unusually long-lived for an anonymous confession platform.
+            </p>
+            <img src="/blog/monthly_activity.png" alt="Monthly activity bar chart" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="space-y-2">
               {monthly.map((m: { month: string; count: number }) => (
                 <MonthlyBar key={m.month} month={m.month} count={m.count} max={maxMonthly} />
               ))}
+            </div>
+          </Section>
+        )}
+
+        {/* ── 8. Methodology ────────────────────────────── */}
+        {landscape?.cluster_taxonomy && (
+          <Section title="Methodology">
+            <div className="space-y-2 text-[0.88rem] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+              <p><strong>Embedding:</strong> Each confession encoded with <code>text-embedding-3-small</code> (512 dimensions).</p>
+              <p><strong>Dimensionality Reduction:</strong> UMAP (15 neighbours, min distance 0.1) fit on 15K sample, transformed across all 72K posts.</p>
+              <p><strong>Clustering:</strong> Mean Shift (bandwidth=2.14) for region detection, validated against HDBSCAN. Four stable regions identified.</p>
+              <p><strong>Virality:</strong> Composite score = reactions + 2× replies + 3× forwards. Top 25% scored posts classified as viral.</p>
+              <p><strong>Data Source:</strong> Telegram API via t.me/NUSConfessIT. Analysis date: May 2026.</p>
             </div>
           </Section>
         )}
