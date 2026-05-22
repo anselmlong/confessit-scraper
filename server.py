@@ -438,10 +438,8 @@ def api_landscape():
     arr = np.array(scores)
     th = float(np.percentile(arr, 75))
 
-    # Categories extracted from text (91% coverage) vs DB field (21% coverage)
     cat_counts = Counter(extract_cat(r[1]) for r in rows)
 
-    # Viral hotspots
     top_posts = sorted(
         [(r[0], r[2]*1 + r[3]*2 + r[4]*3, r[1] or "") for r in rows],
         key=lambda x: -x[1]
@@ -473,6 +471,209 @@ def api_landscape():
             "method": "UMAP (15k fit, 65k transform) + Mean Shift (bandwidth=2.14) + HDBSCAN validation",
             "embedding_model": "openai/text-embedding-3-small (512d)",
         },
+    })
+
+
+# ── ML Insights ─────────────────────────────────────────────────────────────
+
+_HOOK_KWS = ["am i the only one", "hot take", "unpopular opinion", "am i wrong",
+             "does anyone else", "tell me i'm not", "is it just me", "cmv"]
+_CTA_KWS = ["react", "vote", "what do you think", "comment", "thoughts?", "opinions?",
+            "what would you", "what should i", "agree", "disagree"]
+_CURSE_KWS = ["fuck", "shit", "damn", "bitch", "ass", "wtf", "stfu", "hell",
+              "suck", "crap", "piss", "dick"]
+_REL_KWS = ["bf", "gf", "boyfriend", "girlfriend", "crush", "cheat", "cheating",
+            "ex", "relationship", "dating", "date", "love", "breakup", "broke up",
+            "husband", "wife", "partner"]
+_ACAD_KWS = ["exam", "exams", "gpa", "cap", "fail", "failed", "grade", "deadline",
+             "project", "assignment", "study", "studying", "lecture", "tutorial", "quiz",
+             "midterm", "final", "semester", "mods", "module", "homework", "stress"]
+
+
+@app.route("/api/insights")
+def api_insights():
+    """Feature insights: what predicts higher scores."""
+    import numpy as np
+    import re
+    from datetime import datetime
+
+    conn = _connect()
+    rows = conn.execute(
+        "SELECT id, date, COALESCE(NULLIF(content,''),NULLIF(text,'')) AS body, "
+        "reactions_count, reply_count, forwards, category, word_count "
+        "FROM messages WHERE is_reply=0 AND word_count > 0"
+    ).fetchall()
+    conn.close()
+
+    if not rows:
+        return jsonify({"error": "no data"}), 500
+
+    # Pre-compute score and features for each post
+    records = []
+    for r in rows:
+        pid, date_str, body, rc, rpc, fw, cat, wc = r
+        body = body or ""
+        score = (rc or 0) * 1 + (rpc or 0) * 2 + (fw or 0) * 3
+        txt_lower = body.lower()
+
+        # Text features
+        emoji_count = sum(1 for c in body if ord(c) > 0x1F300)
+        has_question = int("?" in body)
+        hook_count = sum(txt_lower.count(k) for k in _HOOK_KWS)
+        cta_count = sum(txt_lower.count(k) for k in _CTA_KWS)
+        curse_count = sum(txt_lower.count(k) for k in _CURSE_KWS)
+        rel_density = sum(txt_lower.count(k) for k in _REL_KWS) / max(wc, 1)
+        acad_density = sum(txt_lower.count(k) for k in _ACAD_KWS) / max(wc, 1)
+        ellipsis = body.count("...") + body.count("…")
+        allcaps = sum(1 for w in body.split() if len(w) > 2 and w.isupper())
+        line_count = body.count("\n") + 1
+
+        # Time features
+        h = d = -1
+        try:
+            dt = datetime.fromisoformat(date_str)
+            h = dt.hour
+            d = dt.weekday()
+        except:
+            pass
+        if h < 6: hour_bin = 0
+        elif h < 12: hour_bin = 1
+        elif h < 14: hour_bin = 2
+        elif h < 18: hour_bin = 3
+        elif h < 22: hour_bin = 4
+        else: hour_bin = 5
+
+        # Length bin
+        if wc < 20: len_bin = "short"
+        elif wc < 80: len_bin = "medium"
+        else: len_bin = "long"
+
+        records.append({
+            "score": score, "cat": (cat or "unknown").lower(),
+            "wc": wc, "line_count": line_count,
+            "hour": h, "dow": d, "hour_bin": hour_bin, "len_bin": len_bin,
+            "emc": emoji_count, "hq": has_question,
+            "hook": hook_count, "cta": cta_count,
+            "curse": curse_count, "ellipsis": ellipsis,
+            "allcaps": allcaps, "rel_density": rel_density,
+            "acad_density": acad_density,
+        })
+
+    N = len(records)
+    all_scores = np.array([r["score"] for r in records])
+
+    # ── 1. Category virality ──
+    from collections import defaultdict
+    cat_buckets = defaultdict(list)
+    for r in records:
+        cat_buckets[r["cat"]].append(r["score"])
+    cat_stats = []
+    for cat, scs in cat_buckets.items():
+        if len(scs) < 10:
+            continue
+        arr_cat = np.array(scs)
+        cat_stats.append({
+            "category": cat.capitalize(),
+            "post_count": len(scs),
+            "avg_score": round(float(arr_cat.mean()), 1),
+            "median_score": round(float(np.median(arr_cat)), 1),
+            "viral_rate": round(float((arr_cat >= np.percentile(all_scores, 75)).mean()), 3),
+        })
+    cat_stats.sort(key=lambda x: -x["viral_rate"])
+
+    # ── 2. Hour bins ──
+    HOUR_LABELS = ["Night (12-6am)", "Morning (6-12pm)", "Lunch (12-2pm)",
+                   "Afternoon (2-6pm)", "Evening (6-10pm)", "Late (10pm-12am)"]
+    hour_buckets = defaultdict(list)
+    for r in records:
+        if r["hour"] >= 0:
+            hour_buckets[r["hour_bin"]].append(r["score"])
+    hour_impact = []
+    for bin_id in sorted(hour_buckets):
+        arr_h = np.array(hour_buckets[bin_id])
+        hour_impact.append({
+            "label": HOUR_LABELS[bin_id],
+            "avg_score": round(float(arr_h.mean()), 1),
+            "post_count": len(arr_h),
+        })
+
+    # ── 3. Day of week ──
+    DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    dow_buckets = defaultdict(list)
+    for r in records:
+        if r["dow"] >= 0:
+            dow_buckets[r["dow"]].append(r["score"])
+    dow_impact = []
+    for d in sorted(dow_buckets):
+        arr_d = np.array(dow_buckets[d])
+        dow_impact.append({
+            "day": DAY_NAMES[d],
+            "avg_score": round(float(arr_d.mean()), 1),
+            "post_count": len(arr_d),
+        })
+
+    # ── 4. Length bins ──
+    len_buckets = defaultdict(list)
+    for r in records:
+        len_buckets[r["len_bin"]].append(r["score"])
+    len_impact = []
+    for label in ["short", "medium", "long"]:
+        scs = len_buckets[label]
+        arr_l = np.array(scs)
+        len_impact.append({
+            "label": label,
+            "avg_score": round(float(arr_l.mean()), 1),
+            "post_count": len(arr_l),
+        })
+
+    # ── 5. Feature correlation with score ──
+    feature_cols = [
+        ("emc", "Emoji count", "number"),
+        ("hq", "Has question", "bool"),
+        ("line_count", "Line count", "number"),
+        ("rel_density", "Relationship density", "number"),
+        ("acad_density", "Academic density", "number"),
+        ("allcaps", "All-caps words", "number"),
+        ("ellipsis", "Ellipsis count", "number"),
+        ("curse", "Curse words", "number"),
+        ("hook", "Rhetorical hooks", "number"),
+        ("cta", "Calls to action", "number"),
+    ]
+    features = []
+    for key, label, ftype in feature_cols:
+        vals = np.array([r[key] for r in records], dtype=float)
+        corr = np.corrcoef(vals, all_scores)[0, 1]
+        # Compare presence vs absence for bool-like features
+        if ftype == "bool":
+            present_scores = all_scores[vals > 0]
+            absent_scores = all_scores[vals == 0]
+            boost = (present_scores.mean() - absent_scores.mean()) if len(present_scores) > 0 and len(absent_scores) > 0 else 0
+            features.append({
+                "feature": label,
+                "correlation": round(corr, 3),
+                "boost": round(boost, 1),
+                "has_pct": round(float((vals > 0).mean() * 100), 1),
+            })
+        else:
+            # Split into high/low at median
+            med = np.median(vals)
+            high_scores = all_scores[vals > med]
+            low_scores = all_scores[vals <= med]
+            boost = (high_scores.mean() - low_scores.mean()) if len(high_scores) > 0 and len(low_scores) > 0 else 0
+            features.append({
+                "feature": label,
+                "correlation": round(corr, 3),
+                "boost": round(boost, 1),
+            })
+    features.sort(key=lambda x: -abs(x["correlation"]))
+
+    return jsonify({
+        "category_virality": cat_stats,
+        "hour_impact": hour_impact,
+        "day_impact": dow_impact,
+        "length_impact": len_impact,
+        "feature_correlations": features,
+        "baseline_avg_score": round(float(all_scores.mean()), 1),
     })
 
 
