@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const postId = parseInt(id, 10);
   const vps = await fetchPostFromVPS(postId);
-  if (vps?.post?.title) return { title: `${vps.post.title} — NUSConfessIT` };
+  if (vps?.post) return { title: `${vps.post.title || `Confession ID ${postId}`} — NUSConfessIT` };
   const post = getPost(postId);
   if (!post) return { title: 'Not Found — NUSConfessIT' };
   const label = post.confession_id ? `#${post.confession_id}` : `ID ${post.id}`;
