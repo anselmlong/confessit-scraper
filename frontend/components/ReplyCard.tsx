@@ -23,7 +23,7 @@ export function ReplyCard({ reply, index }: { reply: Reply; index: number }) {
         dangerouslySetInnerHTML={{ __html: html }}
       />
       <div className="mt-1.5 md:mt-2 text-[0.7rem] md:text-[0.74rem] flex gap-2 md:gap-3" style={{ color: 'var(--text-muted)' }}>
-        <span>{(reply.date ?? '').slice(0, 10)}</span>
+        <span>{(reply.date ?? '').slice(0, 16).replace('T', ' ')}</span>
         {(reply.reactions_up ?? 0) > 0 && <span>👍 {reply.reactions_up}</span>}
         {(reply.reactions_down ?? 0) > 0 && <span>👎 {reply.reactions_down}</span>}
         {(reply.reactions_count ?? 0) > 0 && <span>❤️ {reply.reactions_count}</span>}

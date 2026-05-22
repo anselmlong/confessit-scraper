@@ -44,7 +44,7 @@ export default async function PostPage({ params }: Props) {
         </div>
         <h1 className="text-lg md:text-2xl font-bold leading-snug">{post.title || `Confession #${id}`}</h1>
         <p className="text-white/75 mt-1 text-sm">
-          {(post.date || '').slice(0, 10)} &middot; #{id}
+          {(post.date || '').slice(0, 16).replace('T', ' ')} &middot; #{id}
         </p>
       </header>
 
