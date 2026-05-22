@@ -38,14 +38,14 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
   };
 
   const pillBase =
-    'text-[0.81rem] font-semibold px-3 py-1.5 rounded-full border-[1.5px] no-underline ' +
+    'text-[0.75rem] md:text-[0.81rem] font-semibold px-2 md:px-3 py-1 md:py-1.5 rounded-full border-[1.5px] no-underline ' +
     'transition-all cursor-pointer whitespace-nowrap';
   const pillActive = 'text-white border-[var(--blue)] bg-[var(--blue)]';
   const pillInactive =
     'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]';
 
   return (
-    <div className="rounded-xl p-5 shadow-sm mb-5" style={{ background: 'var(--surface)' }}>
+    <div className="rounded-xl p-4 md:p-5 shadow-sm mb-4 md:mb-5" style={{ background: 'var(--surface)' }}>
       {/* Search */}
       <form
         onSubmit={e => {
@@ -53,14 +53,14 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
           const fd = new FormData(e.currentTarget);
           navigate({ q: String(fd.get('q') ?? '') });
         }}
-        className="flex items-center gap-2"
+        className="flex items-center gap-1.5 md:gap-2"
       >
         <input
           name="q"
           key={`search-${q}`}
           defaultValue={q}
-          placeholder="Search confessions… e.g. 'relationship', 'CS2030', 'internship'"
-          className="flex-1 px-4 py-2.5 rounded-lg text-[0.92rem] border-[1.5px] outline-none font-[inherit]
+          placeholder="Search confessions…"
+          className="flex-1 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] outline-none font-[inherit]
                      transition-colors focus:border-[var(--blue)]"
           style={{
             background: 'var(--surface)',
@@ -70,7 +70,7 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
         />
         <button
           type="submit"
-          className="px-5 py-2.5 rounded-lg font-semibold text-[0.88rem] text-white border-none cursor-pointer
+          className="px-3 md:px-5 py-2 md:py-2.5 rounded-lg font-semibold text-[0.82rem] md:text-[0.88rem] text-white border-none cursor-pointer
                      transition-all hover:-translate-y-px active:translate-y-px"
           style={{ background: 'var(--blue)' }}
         >
@@ -143,8 +143,8 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
       </div>
 
       {/* Results meta + N pills */}
-      <div className="flex justify-between items-center flex-wrap gap-3 mt-3">
-        <p className="text-[0.83rem] m-0" style={{ color: 'var(--text-3)' }}>
+      <div className="flex justify-between items-center flex-wrap gap-2 md:gap-3 mt-2.5 md:mt-3">
+        <p className="text-[0.78rem] md:text-[0.83rem] m-0" style={{ color: 'var(--text-3)' }}>
           {q ? (
             <>
               Results for{' '}
@@ -157,12 +157,12 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
             </>
           )}
         </p>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1 md:gap-1.5">
           {N_OPTIONS.map(val => (
             <button
               key={val}
               onClick={() => navigate({ n: val })}
-              className={`text-[0.78rem] px-3 py-1.5 rounded-xl border-[1.5px] cursor-pointer transition-all
+              className={`text-[0.72rem] md:text-[0.78rem] px-2 md:px-3 py-1 md:py-1.5 rounded-xl border-[1.5px] cursor-pointer transition-all
                 ${n === val
                   ? 'text-white border-[var(--blue)] bg-[var(--blue)]'
                   : 'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]'}`}

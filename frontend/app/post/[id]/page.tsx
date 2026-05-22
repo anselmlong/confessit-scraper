@@ -32,30 +32,30 @@ export default async function PostPage({ params }: Props) {
   return (
     <>
       <Nav />
-      <header className="text-white px-6 py-8" style={{ background: 'linear-gradient(135deg, #003D7C 0%, #00509E 100%)' }}>
-        <div className="flex gap-5 mb-3.5 items-center flex-wrap">
-          <Link href="/" className="text-white/65 no-underline text-[0.84rem] font-medium hover:text-white transition-colors">
+      <header className="text-white px-4 md:px-6 py-5 md:py-8" style={{ background: 'linear-gradient(135deg, #003D7C 0%, #00509E 100%)' }}>
+        <div className="flex gap-3 md:gap-5 mb-2.5 md:mb-3.5 items-center flex-wrap">
+          <Link href="/" className="text-white/65 no-underline text-[0.8rem] md:text-[0.84rem] font-medium hover:text-white transition-colors">
             ← All Posts
           </Link>
           <a href={tgUrl} target="_blank" rel="noopener noreferrer"
-             className="text-white/65 no-underline text-[0.84rem] font-medium hover:text-white transition-colors">
+             className="text-white/65 no-underline text-[0.8rem] md:text-[0.84rem] font-medium hover:text-white transition-colors">
             View on Telegram ↗
           </a>
         </div>
-        <h1 className="text-2xl font-bold">{post.title || `Confession #${id}`}</h1>
-        <p className="text-white/75 mt-1.5 text-sm">
+        <h1 className="text-lg md:text-2xl font-bold leading-snug">{post.title || `Confession #${id}`}</h1>
+        <p className="text-white/75 mt-1 text-sm">
           {(post.date || '').slice(0, 10)} &middot; #{id}
         </p>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 pb-16 pt-6">
-        <div className="flex gap-5 flex-wrap items-center mb-5 text-[0.88rem]" style={{ color: 'var(--text-3)' }}>
+      <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6">
+        <div className="flex gap-3 md:gap-5 flex-wrap items-center mb-4 md:mb-5 text-[0.85rem] md:text-[0.88rem]" style={{ color: 'var(--text-3)' }}>
           <span>❤️ <strong style={{ color: 'var(--text-1)' }}>{post.reactions_count}</strong></span>
           <span>💬 <strong style={{ color: 'var(--text-1)' }}>{post.reply_count}</strong></span>
           <span>↗ <strong style={{ color: 'var(--text-1)' }}>{post.forwards}</strong></span>
         </div>
 
-        <div className="reading-zone rounded-xl p-6 shadow-sm mb-7 text-[1rem] leading-[1.85]"
+        <div className="reading-zone rounded-xl p-4 md:p-6 shadow-sm mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
              style={{ background: 'var(--surface)', color: 'var(--text-1)' }}
              dangerouslySetInnerHTML={{ __html: html }} />
 
