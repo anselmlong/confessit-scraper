@@ -130,7 +130,6 @@ export default async function StatsPage() {
           <Section title="Overview">
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
               <OverviewStat val={stats.total.toLocaleString()} lbl="Total Posts" />
-              <OverviewStat val={fmt(stats.total_replies ?? 0)} lbl="Total Replies" />
               <OverviewStat val={fmt(stats.total_views ?? 0)} lbl="Total Views" />
               <OverviewStat val={String(stats.avg_reactions ?? 0)} lbl="Avg Reactions" />
               <OverviewStat val={String(stats.days_active ?? 0)} lbl="Days Active" />
