@@ -173,7 +173,7 @@ async def _scrape_replies_async(
                 entity,
                 limit=limit,
                 min_id=since_msg_id,
-                max_id=max_msg_id if max_msg_id else None,
+                max_id=max_msg_id if max_msg_id else 0,
             ):
                 if not msg.reply_to or not msg.reply_to.reply_to_msg_id:
                     continue
