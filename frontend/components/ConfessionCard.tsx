@@ -90,7 +90,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
             <span className="hidden md:inline" aria-label={`${(post.views ?? 0).toLocaleString()} views`}>
               👁 {(post.views ?? 0).toLocaleString()}
             </span>
-            <span>{(post.date ?? '').slice(0, 10)}</span>
+            <span>{(post.date ?? '').slice(0, 16).replace('T', ' ')}</span>
             {post.confession_id && (
               <span style={{ color: 'var(--border)' }}>#{post.confession_id}</span>
             )}
