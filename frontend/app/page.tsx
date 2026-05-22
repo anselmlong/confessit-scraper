@@ -8,10 +8,57 @@ import { StatsGrid } from '@/components/StatsGrid';
 import { BarChart } from '@/components/BarChart';
 import { TimeTagline } from '@/components/TimeTagline';
 import { getPosts, getPostCount, getStats, getMonthlyCounts } from '@/lib/db';
-import type { SortKey, RangeKey } from '@/lib/types';
+import type { Post, Stats, MonthlyCount, SortKey, RangeKey } from '@/lib/types';
 
 const VALID_SORTS: SortKey[] = ['reactions', 'replies', 'score'];
 const VALID_RANGES: RangeKey[] = ['week', 'month', 'year', 'all'];
+const API_BASE = process.env.NEXT_PUBLIC_VPS_API || '';
+
+/* ── VPS API helpers ──────────────────────────────── */
+
+async function vpsPosts(opts: { sort: SortKey; range: RangeKey; limit: number; q?: string }): Promise<Post[] | null> {
+  if (!API_BASE) return null;
+  const p = new URLSearchParams({ sort: opts.sort, range: opts.range, n: String(opts.limit) });
+  if (opts.q) p.set('q', opts.q);
+  try {
+    const r = await fetch(`${API_BASE}/api/posts?${p}`, { next: { revalidate: 300 } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data.map((d: any): Post => ({
+      id: d.id, message_id: null, date: d.date, text: null, content: null,
+      title: d.title || null, category: d.category || null, confession_id: null,
+      reactions_count: d.reactions, reply_count: d.replies, forwards: d.forwards || 0,
+      views: 0, is_reply: 0, reply_to_msg_id: null, word_count: null,
+      score: d.score, excerpt: d.excerpt,
+    }));
+  } catch { return null; }
+}
+
+async function vpsStats(): Promise<Stats | null> {
+  if (!API_BASE) return null;
+  try {
+    const r = await fetch(`${API_BASE}/api/stats`, { next: { revalidate: 300 } });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return {
+      total: d.total_posts, first_date: d.first_date, last_date: d.last_date,
+      total_views: d.total_views, avg_reactions: d.avg_reactions, avg_words: d.avg_words,
+      max_reactions: d.max_reactions, total_replies: d.total_replies, days_active: d.days_active,
+    };
+  } catch { return null; }
+}
+
+async function vpsMonthly(): Promise<MonthlyCount[] | null> {
+  if (!API_BASE) return null;
+  try {
+    const r = await fetch(`${API_BASE}/api/monthly`, { next: { revalidate: 300 } });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data.map((m: any): MonthlyCount => ({ month: m.month, cnt: m.count }));
+  } catch { return null; }
+}
+
+/* ── Main Page ────────────────────────────────────── */
 
 export default async function Home({
   searchParams,
@@ -19,20 +66,22 @@ export default async function Home({
   searchParams: Promise<{ sort?: string; range?: string; n?: string; q?: string }>;
 }) {
   const sp = await searchParams;
-
-  const sort: SortKey = VALID_SORTS.includes(sp.sort as SortKey)
-    ? (sp.sort as SortKey)
-    : 'reactions';
-  const range: RangeKey = VALID_RANGES.includes(sp.range as RangeKey)
-    ? (sp.range as RangeKey)
-    : 'month';
+  const sort: SortKey = VALID_SORTS.includes(sp.sort as SortKey) ? (sp.sort as SortKey) : 'reactions';
+  const range: RangeKey = VALID_RANGES.includes(sp.range as RangeKey) ? (sp.range as RangeKey) : 'month';
   const n = Math.min(Math.max(parseInt(sp.n ?? '25', 10) || 25, 1), 200);
   const q = (sp.q ?? '').trim();
 
-  const posts = getPosts({ range, sort, q: q || undefined, limit: n });
-  const total = getPostCount({ range, q: q || undefined });
-  const stats = getStats();
-  const monthly = getMonthlyCounts();
+  // Try VPS API first, fall back to local SQLite
+  const [remotePosts, remoteStats, remoteMonthly] = await Promise.all([
+    vpsPosts({ sort, range, limit: n, q: q || undefined }),
+    vpsStats(),
+    vpsMonthly(),
+  ]);
+
+  const posts = remotePosts ?? getPosts({ range, sort, q: q || undefined, limit: n });
+  const stats = remoteStats ?? getStats();
+  const monthly = remoteMonthly ?? getMonthlyCounts().map(m => ({ month: m.month, cnt: m.cnt }));
+  const total = remoteStats?.total ?? getPostCount({ range, q: q || undefined });
 
   return (
     <>
@@ -59,8 +108,8 @@ export default async function Home({
         {!q && (
           <p className="text-[0.83rem] mb-4" style={{ color: 'var(--text-3)' }}>
             Top{' '}
-            <strong style={{ color: 'var(--text-1)' }}>{n}</strong>{' '}
-            of{' '}
+            <strong style={{ color: 'var(--text-1)' }}>{n}</strong>
+            {' '}of{' '}
             <strong style={{ color: 'var(--text-1)' }}>{total.toLocaleString()}</strong>
             {posts[0] && (
               <>
