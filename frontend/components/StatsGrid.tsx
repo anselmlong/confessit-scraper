@@ -14,7 +14,6 @@ export function StatsGrid({ stats }: { stats: Stats }) {
     { val: String(stats.avg_words),      lbl: 'Avg Words' },
     { val: String(stats.max_reactions),  lbl: 'Most Reactions' },
     { val: String(stats.days_active),    lbl: 'Days Active' },
-    { val: fmt(stats.total_replies),     lbl: 'Replies Stored' },
   ];
 
   return (
