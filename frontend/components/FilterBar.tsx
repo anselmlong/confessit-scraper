@@ -1,21 +1,24 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
-import type { SortKey, RangeKey } from '@/lib/types';
+import { useTransition, useState } from 'react';
+import type { SortKey, RangeKey, OrderKey } from '@/lib/types';
 
 interface FilterBarProps {
   sort: SortKey;
   range: RangeKey;
   n: number;
   q: string;
+  order: OrderKey;
+  start_date: string;
+  end_date: string;
 }
 
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'reactions', label: '❤ Reactions' },
-  { key: 'replies',   label: '💬 Replies' },
-  { key: 'score',     label: '✨ Score' },
-  { key: 'time',      label: '🕐 Recent' },
+  { key: 'reactions', label: 'Reactions' },
+  { key: 'replies',   label: 'Replies' },
+  { key: 'score',     label: 'Score' },
+  { key: 'time',      label: 'Time' },
 ];
 
 const RANGES: { key: RangeKey; label: string }[] = [
@@ -23,18 +26,30 @@ const RANGES: { key: RangeKey; label: string }[] = [
   { key: 'month', label: 'This Month' },
   { key: 'year',  label: 'This Year' },
   { key: 'all',   label: 'All Time' },
+  { key: 'custom', label: 'Custom' },
 ];
 
 const N_OPTIONS = [25, 50, 100];
 
-export function FilterBar({ sort, range, n, q }: FilterBarProps) {
+export function FilterBar({ sort, range, n, q, order, start_date, end_date }: FilterBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [showScoreTip, setShowScoreTip] = useState(false);
 
-  const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string }>) => {
-    const p = new URLSearchParams({ sort, range, n: String(n), q });
+  const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string; order: string; start_date: string; end_date: string }>) => {
+    const p = new URLSearchParams({ sort, range, n: String(n), q, order });
     Object.entries(overrides).forEach(([k, v]) => p.set(k, String(v)));
+    // Clean up — remove start_date/end_date if range isn't custom
+    const newRange = overrides.range ?? range;
+    if (newRange !== 'custom') {
+      p.delete('start_date');
+      p.delete('end_date');
+    }
     startTransition(() => router.push(`/?${p}`));
+  };
+
+  const toggleOrder = () => {
+    navigate({ order: order === 'desc' ? 'asc' : 'desc' });
   };
 
   const pillBase =
@@ -94,7 +109,7 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
         )}
       </form>
 
-      {/* Filter pills */}
+      {/* Sort + Direction toggle */}
       <div
         className="flex gap-4 flex-wrap items-center mt-3.5 pt-3.5 border-t"
         style={{ borderColor: 'var(--border-light)' }}
@@ -106,18 +121,36 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
           >
             Sort
           </span>
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap items-center">
             {SORTS.map(({ key, label }) => (
               <button
                 key={key}
-                onClick={() => navigate({ sort: key })}
+                onClick={() => {
+                  if (sort === key) {
+                    toggleOrder();
+                  } else {
+                    navigate({ sort: key, order: 'desc' });
+                  }
+                }}
+                onMouseEnter={() => key === 'score' && setShowScoreTip(true)}
+                onMouseLeave={() => setShowScoreTip(false)}
                 className={`${pillBase} ${sort === key ? pillActive : pillInactive}`}
               >
-                {label}
+                {sort === key ? (order === 'desc' ? '↓ ' : '↑ ') : ''}{label}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Score formula tooltip */}
+        {showScoreTip && (
+          <div
+            className="absolute mt-24 md:mt-0 md:relative text-[0.72rem] px-3 py-1.5 rounded-lg shadow-lg z-10"
+            style={{ background: 'var(--surface-alt)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+          >
+            Score = reactions × 3 + replies × 2 + forwards
+          </div>
+        )}
 
         <div className="w-px h-5 shrink-0" style={{ background: 'var(--border)' }} />
 
@@ -142,6 +175,27 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
         </div>
       </div>
 
+      {/* Custom date inputs */}
+      {range === 'custom' && (
+        <div className="flex gap-2 flex-wrap items-center mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-light)' }}>
+          <input
+            type="date"
+            defaultValue={start_date}
+            onChange={e => navigate({ start_date: e.target.value, range: 'custom' })}
+            className="px-3 py-1.5 rounded-lg text-[0.82rem] border-[1.5px] outline-none font-[inherit]"
+            style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
+          />
+          <span className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>→</span>
+          <input
+            type="date"
+            defaultValue={end_date}
+            onChange={e => navigate({ end_date: e.target.value, range: 'custom' })}
+            className="px-3 py-1.5 rounded-lg text-[0.82rem] border-[1.5px] outline-none font-[inherit]"
+            style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
+          />
+        </div>
+      )}
+
       {/* Results meta + N pills */}
       <div className="flex justify-between items-center flex-wrap gap-2 md:gap-3 mt-2.5 md:mt-3">
         <p className="text-[0.78rem] md:text-[0.83rem] m-0" style={{ color: 'var(--text-3)' }}>
@@ -154,6 +208,9 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
             <>
               Showing top{' '}
               <strong style={{ color: 'var(--text-1)' }}>{n}</strong>
+              {range !== 'custom' && (
+                <> &middot; sorted by <strong style={{ color: 'var(--orange)' }}>{order === 'desc' ? '↓' : '↑'} {sort}</strong></>
+              )}
             </>
           )}
         </p>

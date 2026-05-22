@@ -94,6 +94,8 @@ SORTS = {
     "replies": "reply_count",
 }
 
+SCORE_FORMULA = "reactions × 3 + replies × 2 + forwards"
+
 
 def _connect():
     conn = sqlite3.connect(DB_PATH)
@@ -122,20 +124,27 @@ def _enrich(rows):
     return out
 
 
-def get_posts(days=None, limit=25, sort="reactions", q=None):
+def get_posts(days=None, limit=25, sort="reactions", q=None, order="desc", start_date=None, end_date=None):
     conn = _connect()
     order_expr = SORTS.get(sort, SORTS["reactions"])
+    order_dir = "ASC" if order == "asc" else "DESC"
     sql = f"SELECT *, {_score_expr()} AS score FROM messages WHERE is_reply=0"
     params = []
     if days:
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         sql += " AND date >= ?"
         params.append(since)
+    if start_date:
+        sql += " AND date >= ?"
+        params.append(start_date)
+    if end_date:
+        sql += " AND date <= ?"
+        params.append(end_date + "T23:59:59")
     if q:
         like = f"%{q}%"
         sql += " AND (text LIKE ? OR title LIKE ? OR content LIKE ?)"
         params.extend([like, like, like])
-    sql += f" ORDER BY {order_expr} DESC LIMIT ?"
+    sql += f" ORDER BY {order_expr} {order_dir} LIMIT ?"
     params.append(limit)
     rows = conn.execute(sql, params).fetchall()
     conn.close()
@@ -330,6 +339,7 @@ def api_stats():
         "avg_reactions": raw[4] or 0,
         "avg_words": raw[5] or 0,
         "max_reactions": raw[6] or 0,
+        "score_formula": SCORE_FORMULA,
     })
 
 
@@ -349,14 +359,20 @@ def api_monthly():
 def api_posts():
     range_key = request.args.get("range", "month")
     sort_key = request.args.get("sort", "reactions")
+    order_key = request.args.get("order", "desc")
     limit = min(int(request.args.get("n", 25)), 200)
     q = request.args.get("q", "").strip()
+    start_date = request.args.get("start_date", "").strip() or None
+    end_date = request.args.get("end_date", "").strip() or None
 
     rows = get_posts(
-        days=RANGES.get(range_key),
+        days=RANGES.get(range_key) if not start_date else None,
         limit=limit,
         sort=sort_key if sort_key in SORTS else "reactions",
+        order=order_key if order_key in ("asc", "desc") else "desc",
         q=q or None,
+        start_date=start_date,
+        end_date=end_date,
     )
     return jsonify([{
         "id": p["id"],
