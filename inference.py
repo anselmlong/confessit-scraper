@@ -38,6 +38,7 @@ import os
 import sys
 import time
 
+import unsloth  # noqa: F401 — ensures torch is available before explicit import
 import torch
 from peft import PeftModel
 from unsloth import FastLanguageModel, is_bfloat16_supported
