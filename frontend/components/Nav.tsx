@@ -36,6 +36,16 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
         Stats
       </Link>
 
+      <Link
+        href="/blog"
+        className={`text-[0.88rem] font-medium px-4 py-[14px] no-underline transition-colors
+          ${activePage === 'blog'
+            ? 'text-white border-b-[3px] border-[#EF7C00]'
+            : 'text-white/75 hover:text-white'}`}
+      >
+        Blog
+      </Link>
+
       <span className="flex-1" />
       <ThemeToggle />
     </nav>
