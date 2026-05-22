@@ -41,6 +41,7 @@ import time
 import unsloth  # noqa: F401 — ensures torch is available before explicit import
 import torch
 from peft import PeftModel
+from transformers import StoppingCriteria, StoppingCriteriaList
 from unsloth import FastLanguageModel, is_bfloat16_supported
 
 
@@ -66,9 +67,38 @@ def parse_args():
                         help="Base model on HF (default: unsloth/Qwen2.5-7B-bnb-4bit)")
     parser.add_argument("--adapter", default="anselmlong/confessit",
                         help="LoRA adapter on HF (default: anselmlong/confessit)")
+    parser.add_argument("--no-garbage-stop", action="store_true",
+                        help="Disable automatic garbage detection (default: on)")
     parser.add_argument("--max-seq-len", type=int, default=1024,
                         help="Max sequence length (default: 1024)")
     return parser.parse_args()
+
+
+class EndOfConfessionCriteria(StoppingCriteria):
+    """Stop generation when output devolves into emoji/punctuation garbage.
+
+    The model was trained without EOS tokens in the data, so it doesn't know
+    when to stop. Once the confession is done, it tends to ramble into emoji
+    soup. This criteria detects that by checking if the last ~20 generated
+    tokens are mostly non-alphanumeric characters.
+    """
+    def __init__(self, tokenizer, window=20, alpha_threshold=0.25):
+        super().__init__()
+        self.tokenizer = tokenizer
+        self.window = window
+        self.alpha_threshold = alpha_threshold
+
+    def __call__(self, input_ids, scores, **kwargs):
+        generated = input_ids[0]
+        if len(generated) < self.window:
+            return False
+
+        text = self.tokenizer.decode(generated[-self.window:], skip_special_tokens=True)
+        if not text.strip():
+            return False
+
+        alpha = sum(1 for c in text if c.isalpha())
+        return (alpha / len(text.rstrip())) < self.alpha_threshold
 
 
 def load_model(model_name, adapter_name, max_seq_len):
@@ -94,11 +124,11 @@ def load_model(model_name, adapter_name, max_seq_len):
     return model, tokenizer
 
 
-def generate(model, tokenizer, prompt, args):
+def generate(model, tokenizer, prompt, args, stopping_criteria=None):
     """Generate completions from a prompt."""
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
-    outputs = model.generate(
+    gen_kwargs = dict(
         **inputs,
         max_new_tokens=args.max_new,
         temperature=args.temp if args.temp > 0 else None,
@@ -109,6 +139,10 @@ def generate(model, tokenizer, prompt, args):
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
+    if stopping_criteria is not None:
+        gen_kwargs["stopping_criteria"] = stopping_criteria
+
+    outputs = model.generate(**gen_kwargs)
 
     results = []
     for output in outputs:
@@ -139,6 +173,14 @@ def main():
     print("=" * 60)
 
     model, tokenizer = load_model(args.model, args.adapter, args.max_seq_len)
+
+    # Build garbage-detection stopping criteria (unless disabled)
+    garbage_stop = None
+    if not args.no_garbage_stop:
+        garbage_stop = StoppingCriteriaList([EndOfConfessionCriteria(tokenizer)])
+    else:
+        print("[*] Garbage detection disabled (--no-garbage-stop)")
+
     output_lines = []
 
     if args.prompt:
@@ -151,7 +193,7 @@ def main():
     if prompts:
         for prompt in prompts:
             print(f"\n── Prompt ──\n{prompt}")
-            results = generate(model, tokenizer, prompt, args)
+            results = generate(model, tokenizer, prompt, args, garbage_stop)
             for i, text in enumerate(results):
                 line = f"\n── Generation {i+1} ──\n{prompt}{text}"
                 print(line)
@@ -166,7 +208,7 @@ def main():
                 break
 
             t0 = time.time()
-            results = generate(model, tokenizer, prompt, args)
+            results = generate(model, tokenizer, prompt, args, garbage_stop)
             elapsed = time.time() - t0
 
             for i, text in enumerate(results):
