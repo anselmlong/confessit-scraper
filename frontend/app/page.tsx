@@ -10,7 +10,7 @@ import { TimeTagline } from '@/components/TimeTagline';
 import { getPosts, getPostCount, getStats, getMonthlyCounts } from '@/lib/db';
 import type { Post, Stats, MonthlyCount, SortKey, RangeKey } from '@/lib/types';
 
-const VALID_SORTS: SortKey[] = ['reactions', 'replies', 'score'];
+const VALID_SORTS: SortKey[] = ['reactions', 'replies', 'score', 'time'];
 const VALID_RANGES: RangeKey[] = ['week', 'month', 'year', 'all'];
 const API_BASE = process.env.NEXT_PUBLIC_VPS_API || '';
 

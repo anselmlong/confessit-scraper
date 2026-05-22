@@ -48,5 +48,5 @@ export interface MonthlyCount {
   cnt: number;
 }
 
-export type SortKey = 'reactions' | 'replies' | 'score';
+export type SortKey = 'time' | 'reactions' | 'replies' | 'score';
 export type RangeKey = 'week' | 'month' | 'year' | 'all';

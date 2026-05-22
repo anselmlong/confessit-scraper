@@ -346,6 +346,18 @@ export default async function StatsPage() {
           </Section>
         )}
 
+        {/* ── 2.5 Category Breakdown (Text-Extracted) ── */}
+        {landscape?.categories && (
+          <Section title="Category Breakdown">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Rather than relying on the database category field (78% null), we extract categories directly from
+              the confession title text — <strong>91% of posts have a hashtag prefix</strong> like
+              <code> #studies</code>, <code> #romance</code>, or <code> #campus</code>.
+            </p>
+            <img src="/blog/category_breakdown.png" alt="Category breakdown chart" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+          </Section>
+        )}
+
         {/* ── 3. ML-Derived Topic Regions ──────────────── */}
         {regions && (
           <Section title="Topic Regions (ML Clusters)">

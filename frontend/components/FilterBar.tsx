@@ -15,6 +15,7 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'reactions', label: '❤ Reactions' },
   { key: 'replies',   label: '💬 Replies' },
   { key: 'score',     label: '✨ Score' },
+  { key: 'time',      label: '🕐 Recent' },
 ];
 
 const RANGES: { key: RangeKey; label: string }[] = [

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import re
 
-from flask import Flask, render_template, request, abort, redirect
+from flask import Flask, render_template, request, abort, redirect, jsonify
 from markupsafe import Markup, escape
 
 from src.storage.db import DB_PATH, init_db
@@ -88,6 +88,7 @@ app.jinja_env.filters["tgmd"] = _tg_md_to_html
 
 RANGES = {"week": 7, "month": 30, "year": 365, "all": None}
 SORTS = {
+    "time": "date",
     "score": "(reactions_count * 3 + reply_count * 2 + forwards)",
     "reactions": "reactions_count",
     "replies": "reply_count",
@@ -281,6 +282,182 @@ def post(post_id):
     tg_url = f"https://t.me/NUSConfessIT/{post_id}"
     return render_template("post.html", active_page="", post=p, replies=replies,
                            total_in_group=total_in_group, tg_url=tg_url)
+
+
+# ── JSON API endpoints ────────────────────────────────────────────
+
+@app.after_request
+def _cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
+
+@app.route("/api/stats")
+def api_stats():
+    """Overall stats + landscape findings."""
+    conn = _connect()
+    raw = conn.execute("""
+        SELECT
+            COUNT(*) AS total,
+            MIN(date) AS first_date,
+            MAX(date) AS last_date,
+            SUM(views) AS total_views,
+            ROUND(AVG(reactions_count), 1) AS avg_reactions,
+            ROUND(AVG(word_count), 0) AS avg_words,
+            MAX(reactions_count) AS max_reactions
+        FROM messages WHERE is_reply=0
+    """).fetchone()
+    total_replies = conn.execute(
+        "SELECT COUNT(*) FROM messages WHERE is_reply=1"
+    ).fetchone()[0]
+    conn.close()
+
+    first_date = (raw[1] or "")[:10]
+    last_date = (raw[2] or "")[:10]
+    try:
+        days_active = (datetime.fromisoformat(last_date) - datetime.fromisoformat(first_date)).days
+    except:
+        days_active = 0
+
+    return jsonify({
+        "total_posts": raw[0],
+        "total_replies": total_replies,
+        "first_date": first_date,
+        "last_date": last_date,
+        "days_active": days_active,
+        "total_views": raw[3] or 0,
+        "avg_reactions": raw[4] or 0,
+        "avg_words": raw[5] or 0,
+        "max_reactions": raw[6] or 0,
+    })
+
+
+@app.route("/api/monthly")
+def api_monthly():
+    conn = _connect()
+    rows = conn.execute("""
+        SELECT strftime('%Y-%m', date) AS month, COUNT(*) AS cnt
+        FROM messages WHERE is_reply=0 AND date IS NOT NULL
+        GROUP BY month ORDER BY month DESC LIMIT 18
+    """).fetchall()
+    conn.close()
+    return jsonify([{"month": r[0], "count": r[1]} for r in rows][::-1])
+
+
+@app.route("/api/posts")
+def api_posts():
+    range_key = request.args.get("range", "month")
+    sort_key = request.args.get("sort", "reactions")
+    limit = min(int(request.args.get("n", 25)), 200)
+    q = request.args.get("q", "").strip()
+
+    rows = get_posts(
+        days=RANGES.get(range_key),
+        limit=limit,
+        sort=sort_key if sort_key in SORTS else "reactions",
+        q=q or None,
+    )
+    return jsonify([{
+        "id": p["id"],
+        "title": p.get("title") or "",
+        "excerpt": p["excerpt"],
+        "date": p.get("date", "")[:10],
+        "reactions": p.get("reactions_count", 0),
+        "replies": p.get("reply_count", 0),
+        "forwards": p.get("forwards", 0),
+        "score": p["score"],
+        "category": p.get("category", ""),
+    } for p in rows])
+
+
+@app.route("/api/post/<int:post_id>")
+def api_post(post_id):
+    p, replies, total = get_post_and_replies(post_id)
+    if not p:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({
+        "post": {
+            "id": p["id"],
+            "title": p.get("title") or "",
+            "body": p.get("content") or p.get("text") or "",
+            "date": (p.get("date") or "")[:10],
+            "reactions": p.get("reactions_count", 0),
+            "replies": p.get("reply_count", 0),
+            "forwards": p.get("forwards", 0),
+            "score": p.get("score", 0),
+            "category": p.get("category", ""),
+        },
+        "replies": [{
+            "id": r["id"],
+            "body": r.get("content") or r.get("text") or "",
+            "date": (r.get("date") or "")[:10],
+        } for r in replies],
+        "total_replies_in_group": total,
+    })
+
+
+@app.route("/api/landscape")
+def api_landscape():
+    """Embedding landscape findings from ML analysis."""
+    from collections import Counter
+    import numpy as np
+    import re
+
+    conn = _connect()
+    rows = conn.execute(
+        "SELECT id, text, reactions_count, reply_count, forwards, category "
+        "FROM messages WHERE is_reply=0"
+    ).fetchall()
+    conn.close()
+
+    CAT_RE = re.compile(r'^\*{2}#(\w+)\*{2}')
+    def extract_cat(text):
+        m = CAT_RE.match(text or "")
+        if m:
+            return m.group(1).lower()
+        return "unknown"
+
+    scores = [r[2]*1 + r[3]*2 + r[4]*3 for r in rows]
+    arr = np.array(scores)
+    th = float(np.percentile(arr, 75))
+
+    # Categories extracted from text (91% coverage) vs DB field (21% coverage)
+    cat_counts = Counter(extract_cat(r[1]) for r in rows)
+
+    # Viral hotspots
+    top_posts = sorted(
+        [(r[0], r[2]*1 + r[3]*2 + r[4]*3, r[1] or "") for r in rows],
+        key=lambda x: -x[1]
+    )[:10]
+
+    return jsonify({
+        "total_posts": len(rows),
+        "viral_threshold": round(th, 1),
+        "viral_rate": round(float((arr >= th).mean()), 3),
+        "categories": dict(cat_counts.most_common()),
+        "score_distribution": {
+            "mean": round(float(arr.mean()), 1),
+            "median": round(float(np.median(arr)), 1),
+            "p75": round(float(th), 1),
+            "p90": round(float(np.percentile(arr, 90)), 1),
+            "max": int(arr.max()),
+        },
+        "top_posts": [{
+            "id": p[0], "score": p[1],
+            "excerpt": _excerpt(p[2], 150),
+        } for p in top_posts],
+        "cluster_taxonomy": {
+            "4_main_regions": {
+                "academics": {"size_pct": 32, "keywords": "mods, finals, major, course, lecture"},
+                "career_and_hot_takes": {"size_pct": 31, "keywords": "internship, work, students, linkedin, hustle"},
+                "dating_and_relationships": {"size_pct": 29, "keywords": "girl, guys, love, crush, friend"},
+                "lonely_and_admin": {"size_pct": 8, "keywords": "bored, chat, sleep, wanna, swap"},
+            },
+            "method": "UMAP (15k fit, 65k transform) + Mean Shift (bandwidth=2.14) + HDBSCAN validation",
+            "embedding_model": "openai/text-embedding-3-small (512d)",
+        },
+    })
 
 
 if __name__ == "__main__":
