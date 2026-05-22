@@ -493,6 +493,7 @@ _ACAD_KWS = ["exam", "exams", "gpa", "cap", "fail", "failed", "grade", "deadline
 @app.route("/api/insights")
 def api_insights():
     """Feature insights: what predicts higher scores."""
+    import json
     import numpy as np
     import re
     from datetime import datetime
@@ -667,12 +668,22 @@ def api_insights():
             })
     features.sort(key=lambda x: -abs(x["correlation"]))
 
+    # ── 6. ML pipeline feature importance ──
+    ml_importance = None
+    try:
+        ml_path = Path(__file__).parent / "data" / "ml_results" / "feature_importance.json"
+        if ml_path.exists():
+            ml_importance = json.loads(ml_path.read_text())
+    except:
+        pass
+
     return jsonify({
         "category_virality": cat_stats,
         "hour_impact": hour_impact,
         "day_impact": dow_impact,
         "length_impact": len_impact,
         "feature_correlations": features,
+        "ml_importance": ml_importance,
         "baseline_avg_score": round(float(all_scores.mean()), 1),
     })
 

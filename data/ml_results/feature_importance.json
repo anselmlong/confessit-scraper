@@ -1,0 +1,154 @@
+{
+  "metadata_importance": [
+    {
+      "feature": "month",
+      "importance": 147
+    },
+    {
+      "feature": "cc",
+      "importance": 139
+    },
+    {
+      "feature": "hour",
+      "importance": 130
+    },
+    {
+      "feature": "wc",
+      "importance": 117
+    },
+    {
+      "feature": "dow",
+      "importance": 77
+    },
+    {
+      "feature": "lc",
+      "importance": 62
+    }
+  ],
+  "category_importance": [
+    {
+      "category": "studies",
+      "importance": 62
+    },
+    {
+      "category": "romance",
+      "importance": 36
+    },
+    {
+      "category": "others",
+      "importance": 23
+    },
+    {
+      "category": "unknown",
+      "importance": 19
+    },
+    {
+      "category": "campus",
+      "importance": 10
+    },
+    {
+      "category": "rant",
+      "importance": 7
+    },
+    {
+      "category": "whistleblow",
+      "importance": 2
+    }
+  ],
+  "top_tfidf_tokens": [
+    {
+      "token": "the",
+      "importance": 101
+    },
+    {
+      "token": "to",
+      "importance": 87
+    },
+    {
+      "token": "and",
+      "importance": 86
+    },
+    {
+      "token": "for",
+      "importance": 64
+    },
+    {
+      "token": "anyone",
+      "importance": 50
+    },
+    {
+      "token": "how",
+      "importance": 47
+    },
+    {
+      "token": "is",
+      "importance": 44
+    },
+    {
+      "token": "guys",
+      "importance": 37
+    },
+    {
+      "token": "in",
+      "importance": 35
+    },
+    {
+      "token": "it",
+      "importance": 30
+    },
+    {
+      "token": "my",
+      "importance": 30
+    },
+    {
+      "token": "of",
+      "importance": 29
+    },
+    {
+      "token": "but",
+      "importance": 29
+    },
+    {
+      "token": "so",
+      "importance": 28
+    },
+    {
+      "token": "or",
+      "importance": 28
+    },
+    {
+      "token": "what",
+      "importance": 27
+    },
+    {
+      "token": "just",
+      "importance": 27
+    },
+    {
+      "token": "any",
+      "importance": 26
+    },
+    {
+      "token": "got",
+      "importance": 25
+    },
+    {
+      "token": "this",
+      "importance": 24
+    }
+  ],
+  "group_breakdown": {
+    "tfidf": {
+      "importance": 2916,
+      "pct": 77.8
+    },
+    "metadata": {
+      "importance": 672,
+      "pct": 17.9
+    },
+    "category": {
+      "importance": 159,
+      "pct": 4.2
+    }
+  }
+}
