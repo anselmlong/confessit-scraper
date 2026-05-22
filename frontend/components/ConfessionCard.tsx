@@ -60,9 +60,14 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
               {highlight(post.title, q)}
             </div>
           )}
-          <div className="text-[0.93rem] leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          <div className="text-[0.93rem] leading-relaxed line-clamp-3" style={{ color: 'var(--text-2)' }}>
             {highlight(post.excerpt, q)}
           </div>
+          {post.excerpt && post.excerpt.length >= 148 && (
+            <span className="text-[0.72rem] font-medium mt-1 inline-block" style={{ color: 'var(--text-muted)' }}>
+              … read more
+            </span>
+          )}
           <div
             className="mt-2.5 flex gap-2 flex-wrap text-[0.74rem] items-center"
             style={{ color: 'var(--text-muted)' }}

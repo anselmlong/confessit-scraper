@@ -57,6 +57,7 @@ export function FilterBar({ sort, range, n, q }: FilterBarProps) {
       >
         <input
           name="q"
+          key={`search-${q}`}
           defaultValue={q}
           placeholder="Search confessions… e.g. 'relationship', 'CS2030', 'internship'"
           className="flex-1 px-4 py-2.5 rounded-lg text-[0.92rem] border-[1.5px] outline-none font-[inherit]
