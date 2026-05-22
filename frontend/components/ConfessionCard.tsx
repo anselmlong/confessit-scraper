@@ -69,12 +69,12 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
             </span>
           )}
           <div
-            className="mt-2.5 flex gap-2 flex-wrap text-[0.74rem] items-center"
+            className="mt-2.5 flex gap-2 flex-wrap text-[0.72rem] md:text-[0.74rem] items-center"
             style={{ color: 'var(--text-muted)' }}
           >
             {post.category && post.category !== 'Others' && (
               <span
-                className="text-[0.72rem] font-semibold px-2 py-0.5 rounded-xl uppercase tracking-wide"
+                className="text-[0.7rem] md:text-[0.72rem] font-semibold px-1.5 md:px-2 py-0.5 rounded-xl uppercase tracking-wide"
                 style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}
               >
                 {post.category}
@@ -87,7 +87,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
               💬 {post.reply_count}
             </span>
             <span aria-label={`${post.forwards} forwards`}>↗ {post.forwards}</span>
-            <span aria-label={`${(post.views ?? 0).toLocaleString()} views`}>
+            <span className="hidden md:inline" aria-label={`${(post.views ?? 0).toLocaleString()} views`}>
               👁 {(post.views ?? 0).toLocaleString()}
             </span>
             <span>{(post.date ?? '').slice(0, 10)}</span>

@@ -35,17 +35,17 @@ export default async function Home({
   return (
     <>
       <Nav activePage="home" />
-      <header className="text-white px-6 py-8" style={{ background: 'linear-gradient(135deg, #003D7C 0%, #00509E 100%)' }}>
+      <header className="text-white px-4 md:px-6 py-5 md:py-8" style={{ background: 'linear-gradient(135deg, #003D7C 0%, #00509E 100%)' }}>
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold">NUSConfessIT</h1>
-          <p className="text-white/75 mt-1.5 text-sm">
+          <h1 className="text-lg md:text-2xl font-bold leading-snug">NUSConfessIT</h1>
+          <p className="text-white/75 mt-1 text-sm">
             {total.toLocaleString()} confessions
           </p>
           <TimeTagline />
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 pb-16 pt-6">
+      <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6">
         <FilterBar sort={sort} range={range} n={n} q={q} />
 
         {!q && (
