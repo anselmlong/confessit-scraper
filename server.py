@@ -384,6 +384,7 @@ def api_posts():
         "forwards": p.get("forwards", 0),
         "score": p["score"],
         "category": p.get("category", ""),
+        "views": p.get("views", 0),
     } for p in rows])
 
 
@@ -403,6 +404,7 @@ def api_post(post_id):
             "forwards": p.get("forwards", 0),
             "score": p.get("score", 0),
             "category": p.get("category", ""),
+            "views": p.get("views", 0),
         },
         "replies": [{
             "id": r["id"],

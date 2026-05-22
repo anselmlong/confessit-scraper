@@ -27,7 +27,7 @@ export async function getPosts(opts: {
     id: d.id, message_id: null, date: d.date, text: null, content: null,
     title: d.title || null, category: d.category || null, confession_id: null,
     reactions_count: d.reactions, reply_count: d.replies, forwards: d.forwards || 0,
-    views: 0, is_reply: 0, reply_to_msg_id: null, word_count: null,
+    views: d.views ?? 0, is_reply: 0, reply_to_msg_id: null, word_count: null,
     score: d.score, excerpt: d.excerpt,
   }));
 }
@@ -63,7 +63,7 @@ export async function getPost(id: number): Promise<{ post: Post; replies: any[];
       content: d.post.body || null, title: d.post.title || null,
       category: d.post.category || null, confession_id: null,
       reactions_count: d.post.reactions, reply_count: d.post.replies,
-      forwards: d.post.forwards || 0, views: 0, is_reply: 0,
+      forwards: d.post.forwards || 0, views: d.post.views ?? 0, is_reply: 0,
       reply_to_msg_id: null, word_count: null, score: d.post.score || 0,
       excerpt: (d.post.body || '').slice(0, 150),
     },
