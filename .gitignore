@@ -26,3 +26,5 @@ venv/
 messages.db
 get_best_params.py
 scripts/
+.next/
+node_modules/
