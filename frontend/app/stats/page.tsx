@@ -2,7 +2,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { Nav } from '@/components/Nav';
-import { getStats, getMonthlyCounts, getLandscape } from '@/lib/api';
+import { getStats, getMonthlyCounts, getLandscape, getInsights } from '@/lib/api';
 
 /* ── Helpers ───────────────────────────────────────── */
 
@@ -72,17 +72,46 @@ function MonthlyBar({ month, count, max }: { month: string; count: number; max: 
   );
 }
 
+function BarRow({ label, value, maxVal, color }: { label: string; value: number | string; maxVal: number; color?: string }) {
+  const numVal = typeof value === 'string' ? parseFloat(value) : value;
+  const pct = maxVal > 0 ? (numVal / maxVal) * 100 : 0;
+  const c = color || 'var(--blue)';
+  return (
+    <div className="flex items-center gap-2 text-[0.82rem] mb-2">
+      <span className="w-36 text-right shrink-0 truncate" style={{ color: 'var(--text-2)' }}>{label}</span>
+      <div className="h-[18px] rounded-sm flex-1 min-w-0" style={{ background: 'var(--surface-mid)' }}>
+        <div className="h-full rounded-sm flex items-center justify-end px-1.5 text-[0.65rem] font-bold text-white"
+             style={{ width: `${Math.min(pct, 100)}%`, background: c }}>
+          {pct > 15 ? value : ''}
+        </div>
+      </div>
+      {pct <= 15 && <span className="text-[0.72rem] font-bold shrink-0" style={{ color }}>{value}</span>}
+    </div>
+  );
+}
+
 /* ── Page ───────────────────────────────────────────── */
 
 export default async function StatsPage() {
-  const [landscape, stats, monthly] = await Promise.all([
+  const [landscape, stats, monthly, insights] = await Promise.all([
     getLandscape(),
     getStats(),
     getMonthlyCounts(),
+    getInsights(),
   ]);
 
   const regions = landscape?.cluster_taxonomy?.["4_main_regions"];
   const maxMonthly = monthly.length > 0 ? Math.max(...monthly.map(m => m.cnt), 1) : 1;
+
+  // Pre-compute max values for bar charts
+  const maxFeatureBoost = insights?.feature_correlations
+    ? Math.max(...insights.feature_correlations.map((f: any) => Math.abs(f.boost)), 1) : 1;
+  const maxHourScore = insights?.hour_impact
+    ? Math.max(...insights.hour_impact.map((h: any) => h.avg_score), 1) : 1;
+  const maxDayScore = insights?.day_impact
+    ? Math.max(...insights.day_impact.map((d: any) => d.avg_score), 1) : 1;
+  const maxCatViral = insights?.category_virality
+    ? Math.max(...insights.category_virality.map((c: any) => c.viral_rate), 0.01) : 1;
 
   return (
     <>
@@ -178,6 +207,129 @@ export default async function StatsPage() {
           </Section>
         )}
 
+        {insights && (
+          <Section title="Feature Importance: What Drives Scores">
+            <p className="text-[0.88rem] leading-relaxed mb-4" style={{ color: 'var(--text-2)' }}>
+              Correlation and boost of each feature against engagement score.
+              <strong> Baseline avg score: {insights.baseline_avg_score}</strong>.
+            </p>
+            {insights.feature_correlations.map((f: any) => {
+              const absBoost = Math.abs(f.boost);
+              const pct = maxFeatureBoost > 0 ? (absBoost / maxFeatureBoost) * 100 : 0;
+              const isPositive = f.boost >= 0;
+              const barColor = isPositive ? 'var(--blue)' : 'var(--orange)';
+              const pctColor = isPositive ? 'var(--blue)' : 'var(--orange)';
+              return (
+                <div key={f.feature} className="flex items-center gap-2 text-[0.82rem] mb-2.5">
+                  <span className="w-36 text-right shrink-0 truncate font-medium" style={{ color: 'var(--text-1)' }}>
+                    {f.feature}
+                  </span>
+                  <div className="h-[18px] rounded-sm flex-1 min-w-0" style={{ background: 'var(--surface-mid)' }}>
+                    <div className="h-full rounded-sm flex items-center px-1.5 text-[0.65rem] font-bold text-white"
+                         style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}>
+                      {pct > 12 ? `${isPositive ? '+' : ''}${f.boost}` : ''}
+                    </div>
+                  </div>
+                  <span className="text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    r={f.correlation}
+                  </span>
+                  {pct <= 12 && (
+                    <span className="text-[0.72rem] font-bold shrink-0" style={{ color: pctColor }}>
+                      {isPositive ? '+' : ''}{f.boost}
+                    </span>
+                  )}
+                  {f.has_pct !== undefined && (
+                    <span className="text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                      {f.has_pct}% use it
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </Section>
+        )}
+
+        {insights && (
+          <Section title="Best Time to Post">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Average score by time of day and day of week.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <h3 className="text-[0.75rem] uppercase tracking-wide font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
+                  Hour of Day
+                </h3>
+                {insights.hour_impact.map((h: any) => (
+                  <BarRow key={h.label} label={h.label} value={h.avg_score} maxVal={maxHourScore} />
+                ))}
+              </div>
+              <div>
+                <h3 className="text-[0.75rem] uppercase tracking-wide font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
+                  Day of Week
+                </h3>
+                {insights.day_impact.map((d: any) => (
+                  <BarRow key={d.day} label={d.day} value={d.avg_score} maxVal={maxDayScore} />
+                ))}
+              </div>
+            </div>
+          </Section>
+        )}
+
+        {insights?.category_virality && (
+          <Section title="Category Viral Rates">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Which categories go viral most often. <strong>Viral rate</strong> = % of posts in that category
+              in the top 25% by score.
+            </p>
+            <div className="space-y-2">
+              {insights.category_virality.map((c: any) => (
+                <div key={c.category} className="flex items-center gap-2 text-[0.82rem]">
+                  <span className="w-36 text-right shrink-0 truncate font-medium" style={{ color: 'var(--text-1)' }}>
+                    {c.category}
+                  </span>
+                  <div className="h-[18px] rounded-sm flex-1 min-w-0" style={{ background: 'var(--surface-mid)' }}>
+                    <div className="h-full rounded-sm flex items-center px-1.5 text-[0.65rem] font-bold text-white"
+                         style={{ width: `${(c.viral_rate / maxCatViral) * 100}%`, background: 'var(--orange)' }}>
+                      {(c.viral_rate / maxCatViral) > 0.15 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
+                    </div>
+                  </div>
+                  <span className="text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    {(c.viral_rate / maxCatViral) <= 0.15 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
+                  </span>
+                  <span className="text-[0.68rem] shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    avg {c.avg_score} · n={c.post_count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {insights?.length_impact && (
+          <Section title="Post Length vs Engagement">
+            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
+              Longer posts perform significantly better — <strong>long posts (&gt;80 words) average
+              {insights.length_impact.find((l: any) => l.label === 'long')?.avg_score ?? ''}</strong>,
+              nearly double the medium post average.
+            </p>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+              {insights.length_impact.map((l: any) => (
+                <div key={l.label} className="rounded-lg p-3 text-center border-t-[3px]"
+                     style={{ background: 'var(--surface-alt)', borderColor: l.label === 'long' ? 'var(--orange)' : 'var(--blue)' }}>
+                  <div className="text-xl font-black" style={{ color: l.label === 'long' ? 'var(--orange)' : 'var(--blue)' }}>
+                    {l.avg_score}
+                  </div>
+                  <div className="text-[0.65rem] uppercase tracking-wide mt-0.5"
+                       style={{ color: 'var(--text-3)' }}>{l.label}</div>
+                  <div className="text-[0.68rem] mt-1" style={{ color: 'var(--text-muted)' }}>
+                    {((l.post_count / (insights.baseline_avg_score ? stats?.total || 1 : 1)) * 100).toFixed(0)}% of posts
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {landscape?.top_posts?.length > 0 && (
           <Section title="Top 10 Most Engaged Posts">
             <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
@@ -215,6 +367,7 @@ export default async function StatsPage() {
             <p><strong>Reduction:</strong> UMAP (15 neighbours, min distance 0.1).</p>
             <p><strong>Clustering:</strong> Mean Shift (bandwidth=2.14) + HDBSCAN.</p>
             <p><strong>Virality:</strong> Score = reactions + 2× replies + 3× forwards. Top 25% = viral.</p>
+            <p><strong>Feature impact:</strong> Per-post features computed from text (emoji count, curse words, relationship keywords, etc.). Correlation measured against engagement score across all 72K posts.</p>
             <p><strong>Source:</strong> t.me/NUSConfessIT via Telegram API. May 2026.</p>
           </div>
         </Section>

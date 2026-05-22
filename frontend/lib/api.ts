@@ -72,7 +72,11 @@ export async function getPost(id: number): Promise<{ post: Post; replies: any[];
   };
 }
 
-/* ── Landscape ── */
+/* ── Insights ── */
+
+export async function getInsights() {
+  return fetchJSON(`${API}/api/insights`);
+}
 
 export async function getLandscape() {
   return fetchJSON(`${API}/api/landscape`);
