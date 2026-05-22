@@ -520,6 +520,9 @@ def api_insights():
         # Text features
         emoji_count = sum(1 for c in body if ord(c) > 0x1F300)
         has_question = int("?" in body)
+
+        # Normalize category: strip emoji, take first word
+        cat_clean = (cat or "unknown").split()[0].lower() if cat else "unknown"
         hook_count = sum(txt_lower.count(k) for k in _HOOK_KWS)
         cta_count = sum(txt_lower.count(k) for k in _CTA_KWS)
         curse_count = sum(txt_lower.count(k) for k in _CURSE_KWS)
@@ -550,7 +553,7 @@ def api_insights():
         else: len_bin = "long"
 
         records.append({
-            "score": score, "cat": (cat or "unknown").lower(),
+            "score": score, "cat": cat_clean,
             "wc": wc, "line_count": line_count,
             "hour": h, "dow": d, "hour_bin": hour_bin, "len_bin": len_bin,
             "emc": emoji_count, "hq": has_question,

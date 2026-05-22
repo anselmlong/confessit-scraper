@@ -1,15 +1,15 @@
 Model: xgboost
-CV F1-macro : 0.4320 ± 0.0069
-CV F1-weighted: 0.5623
-CV fold scores: [0.4244, 0.436, 0.4258, 0.4431, 0.4309]
+CV F1-macro : 0.4759 ± 0.0027
+CV F1-weighted: 0.5081
+CV fold scores: [0.4718, 0.4771, 0.4779, 0.479, 0.4736]
 
 Classification report (80/20 hold-out):
               precision    recall  f1-score   support
 
-         low       0.65      0.90      0.76       469
-      medium       0.52      0.31      0.39       274
-        high       0.88      0.09      0.17        76
+         low       0.59      0.79      0.68      5875
+      medium       0.42      0.34      0.38      4462
+        high       0.53      0.31      0.39      2877
 
-    accuracy                           0.63       819
-   macro avg       0.68      0.44      0.44       819
-weighted avg       0.63      0.63      0.58       819
+    accuracy                           0.54     13214
+   macro avg       0.51      0.48      0.48     13214
+weighted avg       0.52      0.54      0.51     13214
