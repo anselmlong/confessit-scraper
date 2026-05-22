@@ -5,6 +5,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'NUSConfessIT Dashboard',
   description: 'Browse, search, and explore confessions from the NUSConfessIT Telegram channel.',
+  icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
