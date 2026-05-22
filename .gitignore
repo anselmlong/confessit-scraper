@@ -1,7 +1,6 @@
 .env
 sessions/
 data/*.db
-!frontend/messages.db
 __pycache__/
 *.pyc
 .venv/

@@ -1,10 +1,5 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  serverExternalPackages: ['better-sqlite3'],
-  outputFileTracingIncludes: {
-    '/**': ['./messages.db'],
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
