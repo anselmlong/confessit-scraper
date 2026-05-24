@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTransition, useState } from 'react';
+import { useTransition } from 'react';
 import type { SortKey, RangeKey, OrderKey } from '@/lib/types';
 
 interface FilterBarProps {
@@ -35,7 +35,6 @@ const N_OPTIONS = [25, 50, 100];
 export function FilterBar({ sort, range, n, q, order, start_date, end_date, total }: FilterBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [showScoreTip, setShowScoreTip] = useState(false);
 
   const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string; order: string; start_date: string; end_date: string }>) => {
     const p = new URLSearchParams({ sort, range, n: String(n), q, order });
@@ -124,34 +123,33 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
           </span>
           <div className="flex gap-1.5 flex-wrap items-center">
             {SORTS.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => {
-                  if (sort === key) {
-                    toggleOrder();
-                  } else {
-                    navigate({ sort: key, order: 'desc' });
-                  }
-                }}
-                onMouseEnter={() => key === 'score' && setShowScoreTip(true)}
-                onMouseLeave={() => setShowScoreTip(false)}
-                className={`${pillBase} ${sort === key ? pillActive : pillInactive}`}
-              >
-                {sort === key ? (order === 'desc' ? '↓ ' : '↑ ') : ''}{label}
-              </button>
+              key === 'score' ? (
+                <div key={key} className="relative group">
+                  <button
+                    onClick={() => sort === key ? toggleOrder() : navigate({ sort: key, order: 'desc' })}
+                    className={`${pillBase} ${sort === key ? pillActive : pillInactive}`}
+                  >
+                    {sort === key ? (order === 'desc' ? '↓ ' : '↑ ') : ''}{label}
+                  </button>
+                  <div
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[0.72rem] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    style={{ background: 'var(--surface-alt)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+                  >
+                    reactions × 3 + replies × 2 + forwards
+                  </div>
+                </div>
+              ) : (
+                <button
+                  key={key}
+                  onClick={() => sort === key ? toggleOrder() : navigate({ sort: key, order: 'desc' })}
+                  className={`${pillBase} ${sort === key ? pillActive : pillInactive}`}
+                >
+                  {sort === key ? (order === 'desc' ? '↓ ' : '↑ ') : ''}{label}
+                </button>
+              )
             ))}
           </div>
         </div>
-
-        {/* Score formula tooltip */}
-        {showScoreTip && (
-          <div
-            className="absolute mt-24 md:mt-0 md:relative text-[0.72rem] px-3 py-1.5 rounded-lg shadow-lg z-10"
-            style={{ background: 'var(--surface-alt)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
-          >
-            Score = reactions × 3 + replies × 2 + forwards
-          </div>
-        )}
 
         <div className="w-px h-5 shrink-0" style={{ background: 'var(--border)' }} />
 
