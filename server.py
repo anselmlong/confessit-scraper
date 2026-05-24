@@ -19,6 +19,21 @@ app = Flask(__name__)
 app.template_folder = str(Path(__file__).parent / "templates")
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+# Simple in-memory cache for expensive endpoints
+import time as _time
+_cache: dict = {}
+_CACHE_TTL = 3600  # 1 hour
+
+
+def _cached(key: str, fn):
+    """Return cached result, or compute and cache it."""
+    entry = _cache.get(key)
+    if entry and _time.monotonic() - entry["ts"] < _CACHE_TTL:
+        return entry["data"]
+    result = fn()
+    _cache[key] = {"data": result, "ts": _time.monotonic()}
+    return result
+
 
 _MD_INLINE = re.compile(r'\*\*|__(?=\S)|(?<=\S)__|~~|`|\[([^\]]+)\]\([^\)]+\)')
 
@@ -415,12 +430,9 @@ def api_post(post_id):
     })
 
 
-@app.route("/api/landscape")
-def api_landscape():
-    """Embedding landscape findings from ML analysis."""
+def _compute_landscape():
     from collections import Counter
     import numpy as np
-    import re
 
     conn = _connect()
     rows = conn.execute(
@@ -430,24 +442,21 @@ def api_landscape():
     conn.close()
 
     CAT_RE = re.compile(r'^\*{2}#(\w+)\*{2}')
+
     def extract_cat(text):
         m = CAT_RE.match(text or "")
-        if m:
-            return m.group(1).lower()
-        return "unknown"
+        return m.group(1).lower() if m else "unknown"
 
-    scores = [r[2]*1 + r[3]*2 + r[4]*3 for r in rows]
+    scores = [r[2] * 1 + r[3] * 2 + r[4] * 3 for r in rows]
     arr = np.array(scores)
     th = float(np.percentile(arr, 75))
-
     cat_counts = Counter(extract_cat(r[1]) for r in rows)
-
     top_posts = sorted(
-        [(r[0], r[2]*1 + r[3]*2 + r[4]*3, r[1] or "") for r in rows],
-        key=lambda x: -x[1]
+        [(r[0], r[2] * 1 + r[3] * 2 + r[4] * 3, r[1] or "") for r in rows],
+        key=lambda x: -x[1],
     )[:10]
 
-    return jsonify({
+    return {
         "total_posts": len(rows),
         "viral_threshold": round(th, 1),
         "viral_rate": round(float((arr >= th).mean()), 3),
@@ -459,10 +468,10 @@ def api_landscape():
             "p90": round(float(np.percentile(arr, 90)), 1),
             "max": int(arr.max()),
         },
-        "top_posts": [{
-            "id": p[0], "score": p[1],
-            "excerpt": _excerpt(p[2], 150),
-        } for p in top_posts],
+        "top_posts": [
+            {"id": p[0], "score": p[1], "excerpt": _excerpt(p[2], 150)}
+            for p in top_posts
+        ],
         "cluster_taxonomy": {
             "4_main_regions": {
                 "academics": {"size_pct": 32, "keywords": "mods, finals, major, course, lecture"},
@@ -473,7 +482,13 @@ def api_landscape():
             "method": "UMAP (15k fit, 65k transform) + Mean Shift (bandwidth=2.14) + HDBSCAN validation",
             "embedding_model": "openai/text-embedding-3-small (512d)",
         },
-    })
+    }
+
+
+@app.route("/api/landscape")
+def api_landscape():
+    """Embedding landscape findings from ML analysis."""
+    return jsonify(_cached("landscape", _compute_landscape))
 
 
 # ── ML Insights ─────────────────────────────────────────────────────────────
@@ -492,13 +507,10 @@ _ACAD_KWS = ["exam", "exams", "gpa", "cap", "fail", "failed", "grade", "deadline
              "midterm", "final", "semester", "mods", "module", "homework", "stress"]
 
 
-@app.route("/api/insights")
-def api_insights():
-    """Feature insights: what predicts higher scores."""
+def _compute_insights():
     import json
     import numpy as np
-    import re
-    from datetime import datetime
+    from collections import defaultdict
 
     conn = _connect()
     rows = conn.execute(
@@ -509,9 +521,8 @@ def api_insights():
     conn.close()
 
     if not rows:
-        return jsonify({"error": "no data"}), 500
+        return {"error": "no data"}
 
-    # Pre-compute score and features for each post
     records = []
     for r in rows:
         pid, date_str, body, rc, rpc, fw, cat, wc = r
@@ -519,11 +530,8 @@ def api_insights():
         score = (rc or 0) * 1 + (rpc or 0) * 2 + (fw or 0) * 3
         txt_lower = body.lower()
 
-        # Text features
         emoji_count = sum(1 for c in body if ord(c) > 0x1F300)
         has_question = int("?" in body)
-
-        # Normalize category: strip emoji, take first word
         cat_clean = (cat or "unknown").split()[0].lower() if cat else "unknown"
         hook_count = sum(txt_lower.count(k) for k in _HOOK_KWS)
         cta_count = sum(txt_lower.count(k) for k in _CTA_KWS)
@@ -534,13 +542,12 @@ def api_insights():
         allcaps = sum(1 for w in body.split() if len(w) > 2 and w.isupper())
         line_count = body.count("\n") + 1
 
-        # Time features
         h = d = -1
         try:
             dt = datetime.fromisoformat(date_str)
             h = dt.hour
             d = dt.weekday()
-        except:
+        except Exception:
             pass
         if h < 6: hour_bin = 0
         elif h < 12: hour_bin = 1
@@ -549,7 +556,6 @@ def api_insights():
         elif h < 22: hour_bin = 4
         else: hour_bin = 5
 
-        # Length bin
         if wc < 20: len_bin = "short"
         elif wc < 80: len_bin = "medium"
         else: len_bin = "long"
@@ -565,11 +571,9 @@ def api_insights():
             "acad_density": acad_density,
         })
 
-    N = len(records)
     all_scores = np.array([r["score"] for r in records])
 
     # ── 1. Category virality ──
-    from collections import defaultdict
     cat_buckets = defaultdict(list)
     for r in records:
         cat_buckets[r["cat"]].append(r["score"])
@@ -594,14 +598,10 @@ def api_insights():
     for r in records:
         if r["hour"] >= 0:
             hour_buckets[r["hour_bin"]].append(r["score"])
-    hour_impact = []
-    for bin_id in sorted(hour_buckets):
-        arr_h = np.array(hour_buckets[bin_id])
-        hour_impact.append({
-            "label": HOUR_LABELS[bin_id],
-            "avg_score": round(float(arr_h.mean()), 1),
-            "post_count": len(arr_h),
-        })
+    hour_impact = [
+        {"label": HOUR_LABELS[b], "avg_score": round(float(np.array(s).mean()), 1), "post_count": len(s)}
+        for b, s in sorted(hour_buckets.items())
+    ]
 
     # ── 3. Day of week ──
     DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -609,30 +609,22 @@ def api_insights():
     for r in records:
         if r["dow"] >= 0:
             dow_buckets[r["dow"]].append(r["score"])
-    dow_impact = []
-    for d in sorted(dow_buckets):
-        arr_d = np.array(dow_buckets[d])
-        dow_impact.append({
-            "day": DAY_NAMES[d],
-            "avg_score": round(float(arr_d.mean()), 1),
-            "post_count": len(arr_d),
-        })
+    dow_impact = [
+        {"day": DAY_NAMES[d], "avg_score": round(float(np.array(s).mean()), 1), "post_count": len(s)}
+        for d, s in sorted(dow_buckets.items())
+    ]
 
     # ── 4. Length bins ──
     len_buckets = defaultdict(list)
     for r in records:
         len_buckets[r["len_bin"]].append(r["score"])
-    len_impact = []
-    for label in ["short", "medium", "long"]:
-        scs = len_buckets[label]
-        arr_l = np.array(scs)
-        len_impact.append({
-            "label": label,
-            "avg_score": round(float(arr_l.mean()), 1),
-            "post_count": len(arr_l),
-        })
+    len_impact = [
+        {"label": label, "avg_score": round(float(np.array(len_buckets[label]).mean()), 1),
+         "post_count": len(len_buckets[label])}
+        for label in ["short", "medium", "long"]
+    ]
 
-    # ── 5. Feature correlation with score ──
+    # ── 5. Feature correlations ──
     feature_cols = [
         ("emc", "Emoji count", "number"),
         ("hq", "Has question", "bool"),
@@ -648,29 +640,21 @@ def api_insights():
     features = []
     for key, label, ftype in feature_cols:
         vals = np.array([r[key] for r in records], dtype=float)
-        corr = np.corrcoef(vals, all_scores)[0, 1]
-        # Compare presence vs absence for bool-like features
+        corr = float(np.corrcoef(vals, all_scores)[0, 1])
         if ftype == "bool":
-            present_scores = all_scores[vals > 0]
-            absent_scores = all_scores[vals == 0]
-            boost = (present_scores.mean() - absent_scores.mean()) if len(present_scores) > 0 and len(absent_scores) > 0 else 0
-            features.append({
-                "feature": label,
-                "correlation": round(corr, 3),
-                "boost": round(boost, 1),
-                "has_pct": round(float((vals > 0).mean() * 100), 1),
-            })
+            present = all_scores[vals > 0]
+            absent = all_scores[vals == 0]
+            boost = float(present.mean() - absent.mean()) if len(present) and len(absent) else 0.0
+            features.append({"feature": label, "correlation": round(corr, 3),
+                              "boost": round(boost, 1),
+                              "has_pct": round(float((vals > 0).mean() * 100), 1)})
         else:
-            # Split into high/low at median
-            med = np.median(vals)
-            high_scores = all_scores[vals > med]
-            low_scores = all_scores[vals <= med]
-            boost = (high_scores.mean() - low_scores.mean()) if len(high_scores) > 0 and len(low_scores) > 0 else 0
-            features.append({
-                "feature": label,
-                "correlation": round(corr, 3),
-                "boost": round(boost, 1),
-            })
+            med = float(np.median(vals))
+            high = all_scores[vals > med]
+            low = all_scores[vals <= med]
+            boost = float(high.mean() - low.mean()) if len(high) and len(low) else 0.0
+            features.append({"feature": label, "correlation": round(corr, 3),
+                              "boost": round(boost, 1)})
     features.sort(key=lambda x: -abs(x["correlation"]))
 
     # ── 6. ML pipeline feature importance ──
@@ -679,10 +663,10 @@ def api_insights():
         ml_path = Path(__file__).parent / "data" / "ml_results" / "feature_importance.json"
         if ml_path.exists():
             ml_importance = json.loads(ml_path.read_text())
-    except:
+    except Exception:
         pass
 
-    return jsonify({
+    return {
         "category_virality": cat_stats,
         "hour_impact": hour_impact,
         "day_impact": dow_impact,
@@ -690,7 +674,16 @@ def api_insights():
         "feature_correlations": features,
         "ml_importance": ml_importance,
         "baseline_avg_score": round(float(all_scores.mean()), 1),
-    })
+    }
+
+
+@app.route("/api/insights")
+def api_insights():
+    """Feature insights: what predicts higher scores."""
+    result = _cached("insights", _compute_insights)
+    if "error" in result:
+        return jsonify(result), 500
+    return jsonify(result)
 
 
 if __name__ == "__main__":
