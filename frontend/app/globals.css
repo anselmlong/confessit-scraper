@@ -22,22 +22,24 @@
   }
 
   .dark {
-    --bg:           #181210;
-    --surface:      #221a14;
-    --surface-alt:  #2a2018;
-    --surface-mid:  #342820;
-    --text-1:       #ede5d5;
-    --text-2:       #9a8878;
-    --text-3:       #6a5c50;
-    --text-muted:   #4a3e34;
-    --border:       #302620;
-    --border-light: #281e18;
-    --blue:         #e05545;
-    --blue-mid:     #cc3828;
-    --blue-light:   #2a1210;
-    --orange:       #d4900a;
-    --mark-bg:      #3a2c10;
-    --nav-bg:       #0f0c0a;
+    /* Surfaces: near-neutral black — no warm tint, no "designed dark" feel */
+    --bg:           #080808;
+    --surface:      #0f0f0e;
+    --surface-alt:  #141412;
+    --surface-mid:  #1c1a16;
+    /* Text: warmth lives here, not in the backgrounds */
+    --text-1:       #e8e0ca;
+    --text-2:       #9a8e78;
+    --text-3:       #685e50;
+    --text-muted:   #3e3a2e;
+    --border:       #1e1c18;
+    --border-light: #141210;
+    --blue:         #d44535;
+    --blue-mid:     #b83325;
+    --blue-light:   #200c08;
+    --orange:       #c08018;
+    --mark-bg:      #2e2008;
+    --nav-bg:       #040402;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -81,6 +83,28 @@
   @keyframes reading-in {
     from { opacity: 0.3; transform: translateY(8px); }
     to   { opacity: 1;   transform: translateY(0); }
+  }
+
+  /* Dark mode: subtle grain so surfaces read as physical, not digital */
+  html.dark::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+    background-size: 200px 200px;
+  }
+
+  /* Dark mode cards: warm paper text against stark border */
+  html.dark .confession-card {
+    box-shadow: inset 0 0 0 0.5px var(--border);
+  }
+
+  html.dark .confession-card:hover {
+    border-color: var(--text-3) !important;
+    box-shadow: inset 0 0 0 0.5px var(--text-3), 0 8px 24px rgba(0, 0, 0, 0.5);
   }
 
   /* Card hover: lean-in */
