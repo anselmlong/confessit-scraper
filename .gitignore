@@ -28,3 +28,9 @@ get_best_params.py
 scripts/
 .next/
 node_modules/
+.agents/
+.superpowers/
+skills-lock.json
+docs/superpowers/
+frontend/tsconfig.tsbuildinfo
+.claude/
