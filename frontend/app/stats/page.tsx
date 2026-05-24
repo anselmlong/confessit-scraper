@@ -1,5 +1,4 @@
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // re-render at most once per hour
 
 import { Nav } from '@/components/Nav';
 import { getStats, getMonthlyCounts, getLandscape, getInsights } from '@/lib/api';
