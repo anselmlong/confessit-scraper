@@ -5,7 +5,7 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
   return (
     <nav
       className="sticky top-0 z-50 flex items-center gap-0 px-3 md:px-6 shadow-[0_2px_8px_rgba(0,0,0,0.22)]"
-      style={{ background: '#003D7C' }}
+      style={{ background: 'var(--nav-bg)' }}
     >
       <Link
         href="/"
@@ -20,7 +20,7 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
         href="/"
         className={`text-[0.8rem] md:text-[0.88rem] font-medium px-2 md:px-4 py-[10px] md:py-[14px] no-underline transition-colors
           ${activePage === 'home'
-            ? 'text-white border-b-[3px] border-[#EF7C00]'
+            ? 'text-white border-b-[3px] border-[var(--blue)]'
             : 'text-white/75 hover:text-white'}`}
       >
         Overview
@@ -30,7 +30,7 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
         href="/stats"
         className={`text-[0.8rem] md:text-[0.88rem] font-medium px-2 md:px-4 py-[10px] md:py-[14px] no-underline transition-colors
           ${activePage === 'stats'
-            ? 'text-white border-b-[3px] border-[#EF7C00]'
+            ? 'text-white border-b-[3px] border-[var(--blue)]'
             : 'text-white/75 hover:text-white'}`}
       >
         Stats
