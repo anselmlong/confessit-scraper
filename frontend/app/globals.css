@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Design tokens — NUS blue + orange palette */
 @layer base {
   :root {
     --bg:           #f4f6f9;
@@ -18,6 +17,7 @@
     --blue-light:   #e8f0fe;
     --orange:       #EF7C00;
     --mark-bg:      #fff3cc;
+    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   }
 
   .dark {
@@ -43,7 +43,7 @@
   body {
     background: var(--bg);
     color: var(--text-1);
-    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Libre Franklin", system-ui, sans-serif;
     line-height: 1.6;
     transition: background-color 0.22s ease, color 0.22s ease;
   }

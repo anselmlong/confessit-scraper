@@ -24,10 +24,10 @@ export function StatsGrid({ stats }: { stats: Stats }) {
       {items.map(({ val, lbl }) => (
         <div
           key={lbl}
-          className="rounded-lg p-4 text-center border-t-[3px] transition-colors"
-          style={{ background: 'var(--surface-alt)', borderColor: 'var(--blue)' }}
+          className="rounded-lg p-4 text-center"
+          style={{ background: 'var(--surface-alt)' }}
         >
-          <div className="text-2xl font-black break-words" style={{ color: 'var(--blue)' }}>
+          <div className="text-2xl font-black break-words" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>
             {val}
           </div>
           <div
