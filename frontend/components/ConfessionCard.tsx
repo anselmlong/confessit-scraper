@@ -21,6 +21,7 @@ function highlight(text: string, q: string): React.ReactNode {
 }
 
 export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
+  const rankBg = rank === 1 ? 'var(--blue)' : rank === 2 ? 'var(--surface-3, #444)' : rank === 3 ? 'var(--surface-3, #444)' : 'var(--surface-2, #333)';
   const rankTextColor = '#fff';
 
   return (
