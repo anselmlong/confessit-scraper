@@ -125,7 +125,6 @@ export default async function StatsPage() {
               <OverviewStat val={String(stats.avg_reactions ?? 0)} lbl="Avg Reactions" />
               <OverviewStat val={String(stats.days_active ?? 0)} lbl="Days Active" />
               <OverviewStat val={String(stats.avg_words ?? 0)} lbl="Avg Words" />
-              <OverviewStat val={`${stats.first_date ?? '—'}–${stats.last_date ?? '—'}`} lbl="Date Range" />
             </div>
           </Section>
         )}
@@ -179,21 +178,6 @@ export default async function StatsPage() {
               viral posts concentrated in specific regions.
             </p>
             <img src="/blog/umap_landscape.png" alt="UMAP landscape" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
-          </Section>
-        )}
-
-        {landscape && (
-          <Section title="Viral Insights">
-            <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
-              Posts above <strong style={{ color: 'var(--orange)' }}>{landscape.viral_threshold}</strong> are
-              viral (top {(landscape.viral_rate * 100).toFixed(0)}%).
-            </p>
-            <img src="/blog/viral_by_category.png" alt="Viral by topic" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
-            <div className="rounded-lg p-4 text-[0.88rem] leading-relaxed"
-                 style={{ background: 'var(--surface-mid)' }}>
-              <strong style={{ color: 'var(--orange)' }}>Key finding:</strong>{' '}
-              Dating posts form the only consistent viral pocket — ~70% of viral posts come from the dating region.
-            </div>
           </Section>
         )}
 

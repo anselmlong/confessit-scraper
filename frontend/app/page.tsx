@@ -51,26 +51,6 @@ export default async function Home({
             posts.map((p, i) => (<ConfessionCard key={p.id} post={p} rank={i + 1} q={q} />))
           )}
         </div>
-
-        {stats && (
-          <section className="rounded-xl p-5 shadow-sm mb-5" style={{ background: 'var(--surface)' }}>
-            <h2 className="text-[0.72rem] font-semibold uppercase tracking-widest mb-4"
-                style={{ color: 'var(--text-muted)' }}>
-              Channel Stats
-            </h2>
-            <StatsGrid stats={stats} />
-          </section>
-        )}
-
-        {monthly.length > 0 && (
-          <section className="rounded-xl p-5 shadow-sm" style={{ background: 'var(--surface)' }}>
-            <h2 className="text-[0.72rem] font-semibold uppercase tracking-widest mb-4"
-                style={{ color: 'var(--text-muted)' }}>
-              Monthly Activity
-            </h2>
-            <BarChart data={monthly} />
-          </section>
-        )}
       </main>
     </>
   );
