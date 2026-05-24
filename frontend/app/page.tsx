@@ -18,9 +18,9 @@ export default async function Home({
   searchParams: Promise<{ sort?: string; range?: string; n?: string; q?: string; order?: string; start_date?: string; end_date?: string }>;
 }) {
   const sp = await searchParams;
-  const sort: SortKey = VALID_SORTS.includes(sp.sort as SortKey) ? (sp.sort as SortKey) : 'reactions';
-  const range: RangeKey = VALID_RANGES.includes(sp.range as RangeKey) ? (sp.range as RangeKey) : 'month';
-  const n = Math.min(Math.max(parseInt(sp.n ?? '25', 10) || 25, 1), 200);
+  const sort: SortKey = VALID_SORTS.includes(sp.sort as SortKey) ? (sp.sort as SortKey) : 'time';
+  const range: RangeKey = VALID_RANGES.includes(sp.range as RangeKey) ? (sp.range as RangeKey) : 'week';
+  const n = Math.min(Math.max(parseInt(sp.n ?? '100', 10) || 100, 1), 200);
   const q = (sp.q ?? '').trim();
   const order = sp.order === 'asc' ? 'asc' : 'desc';
   const start_date = (sp.start_date ?? '').trim() || undefined;
