@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { ReplyCard } from '@/components/ReplyCard';
 import { getPost } from '@/lib/api';
+import { formatConfessionDate } from '@/lib/date';
 import { tgMdToHtml } from '@/lib/markdown';
 
 interface Props {
@@ -39,7 +40,7 @@ export default async function PostPage({ params }: Props) {
             ← All Posts
           </Link>
           <span style={{ color: 'var(--border)' }}>·</span>
-          <span>{(post.date || '').slice(0, 10)}</span>
+          <span>{formatConfessionDate(post.date || '')}</span>
           <span>❤️ <strong style={{ color: 'var(--text-2)' }}>{post.reactions_count}</strong></span>
           {post.reply_count > 0 && <span>💬 <strong style={{ color: 'var(--text-2)' }}>{post.reply_count}</strong></span>}
           <a href={tgUrl} target="_blank" rel="noopener noreferrer"
