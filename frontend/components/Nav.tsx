@@ -11,7 +11,7 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
         href="/"
         className="text-white font-black text-[0.85rem] md:text-[1rem] py-[10px] md:py-[14px] pr-3 md:pr-6 border-r border-white/15 mr-1 md:mr-2
                    tracking-tight select-none no-underline hover:opacity-90 transition-opacity"
-        style={{ textDecoration: 'none' }}
+        style={{ textDecoration: 'none', fontFamily: 'var(--font-display)' }}
       >
         <span className="hidden sm:inline">NUSConfessIT </span><span className="sm:hidden">NC </span><span style={{ color: '#EF7C00' }}>Dashboard</span>
       </Link>

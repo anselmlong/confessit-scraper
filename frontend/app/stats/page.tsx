@@ -14,9 +14,9 @@ function fmt(n: number): string {
 
 function OverviewStat({ val, lbl }: { val: string; lbl: string }) {
   return (
-    <div className="rounded-lg p-4 text-center border-t-[3px] transition-colors"
-         style={{ background: 'var(--surface-alt)', borderColor: 'var(--blue)' }}>
-      <div className="text-2xl font-black" style={{ color: 'var(--blue)' }}>{val}</div>
+    <div className="rounded-lg p-4 text-center"
+         style={{ background: 'var(--surface-alt)' }}>
+      <div className="text-2xl font-black" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>{val}</div>
       <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>{lbl}</div>
     </div>
   );
@@ -25,8 +25,8 @@ function OverviewStat({ val, lbl }: { val: string; lbl: string }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl p-5 shadow-sm mb-5" style={{ background: 'var(--surface)' }}>
-      <h2 className="text-[0.85rem] font-bold uppercase tracking-[0.8px] mb-4 pb-2 inline-block border-b-2"
-          style={{ color: 'var(--blue)', borderColor: 'var(--orange)' }}>
+      <h2 className="text-[0.72rem] font-semibold uppercase tracking-widest mb-4"
+          style={{ color: 'var(--text-muted)' }}>
         {title}
       </h2>
       {children}
@@ -116,14 +116,6 @@ export default async function StatsPage() {
   return (
     <>
       <Nav activePage="stats" />
-      <header className="text-white px-4 md:px-6 py-5 md:py-8" style={{ background: 'linear-gradient(135deg, #003D7C 0%, #00509E 100%)' }}>
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-lg md:text-2xl font-bold leading-snug">Channel Statistics &amp; Landscape</h1>
-          <p className="text-white/75 mt-1 text-sm">
-            Embedding analysis, score distributions, ML topic clusters, and viral insights
-          </p>
-        </div>
-      </header>
 
       <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6 space-y-1">
         {stats && (
@@ -198,8 +190,8 @@ export default async function StatsPage() {
               viral (top {(landscape.viral_rate * 100).toFixed(0)}%).
             </p>
             <img src="/blog/viral_by_category.png" alt="Viral by topic" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
-            <div className="rounded-lg p-4 text-[0.88rem] leading-relaxed border-l-4 border-[var(--orange)]"
-                 style={{ background: 'var(--surface-alt)' }}>
+            <div className="rounded-lg p-4 text-[0.88rem] leading-relaxed"
+                 style={{ background: 'var(--surface-mid)' }}>
               <strong style={{ color: 'var(--orange)' }}>Key finding:</strong>{' '}
               Dating posts form the only consistent viral pocket — ~70% of viral posts come from the dating region.
             </div>
@@ -313,9 +305,9 @@ export default async function StatsPage() {
             </p>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
               {insights.length_impact.map((l: any) => (
-                <div key={l.label} className="rounded-lg p-3 text-center border-t-[3px]"
-                     style={{ background: 'var(--surface-alt)', borderColor: l.label === 'long' ? 'var(--orange)' : 'var(--blue)' }}>
-                  <div className="text-xl font-black" style={{ color: l.label === 'long' ? 'var(--orange)' : 'var(--blue)' }}>
+                <div key={l.label} className="rounded-lg p-3 text-center"
+                     style={{ background: 'var(--surface-alt)' }}>
+                  <div className="text-xl font-black" style={{ color: l.label === 'long' ? 'var(--orange)' : 'var(--blue)', fontFamily: 'var(--font-display)' }}>
                     {l.avg_score}
                   </div>
                   <div className="text-[0.65rem] uppercase tracking-wide mt-0.5"

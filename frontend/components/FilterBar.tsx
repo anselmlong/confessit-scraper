@@ -12,6 +12,7 @@ interface FilterBarProps {
   order: OrderKey;
   start_date: string;
   end_date: string;
+  total?: number;
 }
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -31,7 +32,7 @@ const RANGES: { key: RangeKey; label: string }[] = [
 
 const N_OPTIONS = [25, 50, 100];
 
-export function FilterBar({ sort, range, n, q, order, start_date, end_date }: FilterBarProps) {
+export function FilterBar({ sort, range, n, q, order, start_date, end_date, total }: FilterBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [showScoreTip, setShowScoreTip] = useState(false);
@@ -208,6 +209,7 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date }: Fi
             <>
               Showing top{' '}
               <strong style={{ color: 'var(--text-1)' }}>{n}</strong>
+              {total != null && <> of <strong style={{ color: 'var(--text-1)' }}>{total.toLocaleString()}</strong></>}
               {range !== 'custom' && (
                 <> &middot; sorted by <strong style={{ color: 'var(--orange)' }}>{order === 'desc' ? '↓' : '↑'} {sort}</strong></>
               )}
