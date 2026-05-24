@@ -284,3 +284,107 @@ def scrape_replies(
             since_id=since_id, progress_callback=progress_callback
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# Reaction refresh — fetch fresh engagement counts for specific post IDs
+# ---------------------------------------------------------------------------
+
+_BATCH_SIZE = 100  # Telegram API limit for messages.getMessages
+
+
+async def _fetch_batch_with_retry(client, channel, ids: list[int]) -> list[dict]:
+    """Fetch one batch of messages by ID, retrying once on FloodWait."""
+    for attempt in range(2):
+        try:
+            msgs = await client.get_messages(channel, ids=ids)
+            return [
+                {
+                    "id": m.id,
+                    "reactions_count": _count_reactions(m),
+                    "views": m.views or 0,
+                    "forwards": m.forwards or 0,
+                    "reply_count": m.replies.replies if m.replies else 0,
+                }
+                for m in msgs
+                if m is not None
+            ]
+        except FloodWaitError as e:
+            if attempt == 0:
+                log.warning("Rate limit — waiting %d seconds before retry...", e.seconds)
+                await asyncio.sleep(e.seconds)
+            else:
+                raise
+    return []
+
+
+async def _refresh_reactions_async(
+    channel_url: str,
+    post_ids: list[int],
+    progress_callback=None,
+) -> list[dict]:
+    """Fetch fresh reactions/views/forwards/reply_count for a list of post IDs."""
+    _validate_credentials()
+
+    sessions_dir = os.path.join(_PROJECT_ROOT, "sessions")
+    session_path = os.path.join(sessions_dir, "nusScraper")
+
+    client = TelegramClient(session_path, int(API_ID), API_HASH)
+    results = []
+
+    try:
+        await client.connect()
+        try:
+            if not await client.is_user_authorized():
+                raise RuntimeError(
+                    "Not logged in to Telegram.\n"
+                    "Run  python auth.py  once to complete sign-in, then retry."
+                )
+        except AuthKeyError:
+            raise RuntimeError(
+                "Telegram auth key is invalid or expired.\n"
+                "Delete sessions/nusScraper.session, run  python auth.py  to log in again."
+            )
+
+        channel = await client.get_entity(channel_url)
+
+        batches = [post_ids[i:i + _BATCH_SIZE] for i in range(0, len(post_ids), _BATCH_SIZE)]
+        log.info("Refreshing reactions for %d posts in %d batches.", len(post_ids), len(batches))
+
+        for i, batch in enumerate(batches):
+            batch_results = await _fetch_batch_with_retry(client, channel, batch)
+            results.extend(batch_results)
+
+            if progress_callback:
+                progress_callback(len(results))
+
+            if i < len(batches) - 1:
+                await asyncio.sleep(0.5)
+
+    except (ConnectionError, OSError) as e:
+        raise RuntimeError(f"Network error while connecting to Telegram: {e}") from e
+    finally:
+        await client.disconnect()
+
+    log.info("Reaction refresh complete: fetched %d/%d posts.", len(results), len(post_ids))
+    return results
+
+
+def refresh_reactions(
+    channel_url: str,
+    post_ids: list[int],
+    progress_callback=None,
+) -> list[dict]:
+    """Fetch fresh engagement counts for specific post IDs.
+
+    Args:
+        channel_url: Telegram channel URL.
+        post_ids: List of message IDs to refresh.
+        progress_callback: Optional callback(fetched_count_so_far).
+
+    Returns:
+        List of dicts with keys: id, reactions_count, views, forwards, reply_count.
+    """
+    return asyncio.run(
+        _refresh_reactions_async(channel_url, post_ids=post_ids, progress_callback=progress_callback)
+    )

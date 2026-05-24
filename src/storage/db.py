@@ -243,3 +243,73 @@ def get_all_replies_count() -> int:
         return row[0] or 0
     except sqlite3.Error as e:
         raise RuntimeError(f"Database read failed: {e}") from e
+
+
+def get_top_post_ids(limit: int = 500) -> list[int]:
+    """Return IDs of the top N non-reply posts ranked by engagement score."""
+    try:
+        conn = _connect()
+        rows = conn.execute(
+            """SELECT id FROM messages
+               WHERE is_reply = 0
+               ORDER BY (reactions_count * 3 + reply_count * 2 + forwards) DESC
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        conn.close()
+        return [r[0] for r in rows]
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Database read failed: {e}") from e
+
+
+def get_recent_post_ids(days: int = 30) -> list[int]:
+    """Return IDs of non-reply posts from the last N days."""
+    from datetime import timedelta
+    try:
+        conn = _connect()
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        rows = conn.execute(
+            "SELECT id FROM messages WHERE is_reply = 0 AND date >= ? ORDER BY date DESC",
+            (cutoff,),
+        ).fetchall()
+        conn.close()
+        return [r[0] for r in rows]
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Database read failed: {e}") from e
+
+
+def update_reactions_bulk(updates: list[dict], channel: str = "NUSConfessIT") -> int:
+    """Update only reactions_count, views, forwards, reply_count for the given posts.
+
+    Each dict in updates must have: id, reactions_count, views, forwards, reply_count.
+    Does not touch text, category, title, content, or any other field.
+    Returns the number of rows actually updated.
+    """
+    if not updates:
+        return 0
+    try:
+        conn = _connect()
+        now = datetime.utcnow().isoformat()
+        updated = 0
+        for u in updates:
+            cursor = conn.execute(
+                """UPDATE messages
+                   SET reactions_count = ?,
+                       views           = ?,
+                       forwards        = ?,
+                       reply_count     = ?,
+                       scraped_at      = ?
+                   WHERE id = ? AND channel = ?""",
+                (
+                    u["reactions_count"], u["views"],
+                    u["forwards"], u["reply_count"],
+                    now, u["id"], channel,
+                ),
+            )
+            updated += cursor.rowcount
+        conn.commit()
+        conn.close()
+        log.debug("update_reactions_bulk: updated %d/%d rows.", updated, len(updates))
+        return updated
+    except sqlite3.Error as e:
+        raise RuntimeError(f"Database write failed: {e}") from e
