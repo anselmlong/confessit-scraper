@@ -20,6 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: `
+          console.log('%c confessit ', 'background:#0d1520;color:#4d8fd6;font-family:monospace;font-size:13px;padding:2px 6px;border-radius:3px;');
+          console.log('%c scraped from telegram. built out of curiosity. ', 'color:#445568;font-size:11px;font-family:monospace;');
+        `}} />
         <ThemeProvider>
           {children}
           <footer className="text-center py-6 text-xs" style={{ color: 'var(--text-muted)' }}>

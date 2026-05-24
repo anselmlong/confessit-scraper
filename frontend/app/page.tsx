@@ -4,9 +4,7 @@ export const dynamic = 'force-dynamic';
 import { Nav } from '@/components/Nav';
 import { FilterBar } from '@/components/FilterBar';
 import { ConfessionCard } from '@/components/ConfessionCard';
-import { StatsGrid } from '@/components/StatsGrid';
-import { BarChart } from '@/components/BarChart';
-import { getPosts, getStats, getMonthlyCounts } from '@/lib/api';
+import { getPosts, getStats } from '@/lib/api';
 import type { SortKey, RangeKey } from '@/lib/types';
 
 const VALID_SORTS: SortKey[] = ['reactions', 'replies', 'score', 'time'];
@@ -26,10 +24,9 @@ export default async function Home({
   const start_date = (sp.start_date ?? '').trim() || undefined;
   const end_date = (sp.end_date ?? '').trim() || undefined;
 
-  const [posts, stats, monthly] = await Promise.all([
+  const [posts, stats] = await Promise.all([
     getPosts({ sort, range, limit: n, q: q || undefined, order, start_date, end_date }),
     getStats(),
-    getMonthlyCounts(),
   ]);
 
   const total = stats?.total ?? 0;
@@ -45,7 +42,10 @@ export default async function Home({
           {posts.length === 0 ? (
             <p className="text-center py-10 text-[0.92rem]" style={{ color: 'var(--text-muted)' }}>
               {q ? `Nothing found for "${q}" — try a broader term or different time range.`
-                 : `Quiet ${range}. Everyone's studying (probably).`}
+                 : range === 'week'  ? `Nothing this week. Even confessions need a break.`
+                 : range === 'month' ? `Quiet month. Everyone's studying (probably).`
+                 : range === 'year'  ? `Not a word this year. Something happened.`
+                 : `Silence. The archive is holding its breath.`}
             </p>
           ) : (
             posts.map((p, i) => (<ConfessionCard key={p.id} post={p} rank={i + 1} q={q} />))

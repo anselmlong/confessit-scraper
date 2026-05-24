@@ -77,8 +77,7 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
           key={`search-${q}`}
           defaultValue={q}
           placeholder="Search confessions…"
-          className="flex-1 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] outline-none font-[inherit]
-                     transition-colors focus:border-[var(--blue)]"
+          className="search-input flex-1 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
           style={{
             background: 'var(--surface)',
             color: 'var(--text-1)',

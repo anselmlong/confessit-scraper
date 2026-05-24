@@ -55,7 +55,7 @@ export default async function PostPage({ params }: Props) {
           </h1>
         )}
 
-        <div className="reading-zone rounded-xl p-4 md:p-6 shadow-sm mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
+        <div className="reading-zone reading-zone-entry rounded-xl p-4 md:p-6 shadow-sm mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
              style={{ background: 'var(--surface)', color: 'var(--text-1)' }}
              dangerouslySetInnerHTML={{ __html: html }} />
 

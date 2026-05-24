@@ -21,14 +21,10 @@ function highlight(text: string, q: string): React.ReactNode {
 }
 
 export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
-  const rankBg = 'var(--surface-2, #333)';
-  const rankTextColor = '#fff';
-
   return (
     <Link href={`/post/${post.id}`} className="no-underline text-inherit block">
       <div
-        className="border rounded-lg p-4 mb-2.5 flex gap-3.5 items-start
-                   transition-shadow hover:shadow-md cursor-pointer"
+        className="confession-card border rounded-lg p-4 mb-2.5 flex gap-3.5 items-start cursor-pointer"
         style={{
           borderColor: 'var(--border)',
           background: 'var(--surface)',
@@ -38,8 +34,8 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
       >
         {/* Rank badge */}
         <div
-          className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-black text-[0.9rem]"
-          style={{ background: rankBg, color: rankTextColor }}
+          className="card-rank shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-black text-[0.9rem]"
+          style={{ background: 'var(--surface-mid)', color: 'var(--text-3)' }}
         >
           {rank}
         </div>
@@ -54,11 +50,11 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
               {highlight(post.title, q)}
             </div>
           )}
-          <div className="text-[0.93rem] leading-relaxed line-clamp-5" style={{ color: 'var(--text-2)' }}>
+          <div className="card-excerpt text-[0.93rem] leading-relaxed line-clamp-5" style={{ color: 'var(--text-2)' }}>
             {highlight(post.excerpt, q)}
           </div>
           <div
-            className="mt-2.5 flex gap-2 flex-wrap text-[0.72rem] md:text-[0.74rem] items-center"
+            className="card-meta mt-2.5 flex gap-2 flex-wrap text-[0.72rem] md:text-[0.74rem] items-center"
             style={{ color: 'var(--text-muted)' }}
           >
             {post.category && post.category !== 'Others' && (

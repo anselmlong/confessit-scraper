@@ -48,6 +48,11 @@
     transition: background-color 0.22s ease, color 0.22s ease;
   }
 
+  ::selection {
+    background: var(--orange);
+    color: #fff;
+  }
+
   mark {
     background: var(--mark-bg);
     border-radius: 2px;
@@ -70,6 +75,53 @@
   }
   @keyframes bar-grow {
     from { width: 0; opacity: 0.3; }
+  }
+  @keyframes reading-in {
+    from { opacity: 0.3; transform: translateY(8px); }
+    to   { opacity: 1;   transform: translateY(0); }
+  }
+
+  /* Card hover: lean-in */
+  .confession-card {
+    transition: transform 0.18s cubic-bezier(0.25, 1, 0.5, 1),
+                border-color 0.18s ease,
+                box-shadow 0.18s ease;
+  }
+  .confession-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--text-3) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+  }
+  .card-rank {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .confession-card:hover .card-rank {
+    opacity: 0.4;
+    transform: scale(0.88);
+  }
+  .card-excerpt {
+    transition: color 0.18s ease;
+  }
+  .confession-card:hover .card-excerpt {
+    color: var(--text-1);
+  }
+  .card-meta {
+    transition: color 0.18s ease;
+  }
+  .confession-card:hover .card-meta {
+    color: var(--text-3);
+  }
+
+  /* Search focus glow */
+  .search-input:focus {
+    outline: none;
+    border-color: var(--blue) !important;
+    box-shadow: 0 0 0 3px var(--blue-light);
+  }
+
+  /* Reading zone entrance */
+  .reading-zone-entry {
+    animation: reading-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both 0.08s;
   }
 
   @media (prefers-reduced-motion: reduce) {
