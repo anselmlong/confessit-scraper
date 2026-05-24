@@ -20,15 +20,8 @@ function highlight(text: string, q: string): React.ReactNode {
   );
 }
 
-const RANK_COLORS: Record<number, string> = {
-  1: '#FFD700',
-  2: '#C0C0C0',
-  3: '#CD7F32',
-};
-
 export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
-  const rankBg = RANK_COLORS[rank] ?? 'var(--blue)';
-  const rankTextColor = rank <= 2 ? '#333' : '#fff';
+  const rankTextColor = '#fff';
 
   return (
     <Link href={`/post/${post.id}`} className="no-underline text-inherit block">
@@ -60,7 +53,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
               {highlight(post.title, q)}
             </div>
           )}
-          <div className="text-[0.93rem] leading-relaxed line-clamp-3" style={{ color: 'var(--text-2)' }}>
+          <div className="text-[0.93rem] leading-relaxed line-clamp-5" style={{ color: 'var(--text-2)' }}>
             {highlight(post.excerpt, q)}
           </div>
           <div
