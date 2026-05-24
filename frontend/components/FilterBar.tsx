@@ -37,9 +37,11 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
   const [, startTransition] = useTransition();
 
   const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string; order: string; start_date: string; end_date: string }>) => {
-    const p = new URLSearchParams({ sort, range, n: String(n), q, order });
+    const base: Record<string, string> = { sort, range, n: String(n), q, order };
+    if (start_date) base.start_date = start_date;
+    if (end_date) base.end_date = end_date;
+    const p = new URLSearchParams(base);
     Object.entries(overrides).forEach(([k, v]) => p.set(k, String(v)));
-    // Clean up — remove start_date/end_date if range isn't custom
     const newRange = overrides.range ?? range;
     if (newRange !== 'custom') {
       p.delete('start_date');
@@ -178,6 +180,7 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
       {range === 'custom' && (
         <div className="flex gap-2 flex-wrap items-center mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-light)' }}>
           <input
+            key={`sd-${start_date}`}
             type="date"
             defaultValue={start_date}
             onChange={e => navigate({ start_date: e.target.value, range: 'custom' })}
@@ -186,6 +189,7 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
           />
           <span className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>→</span>
           <input
+            key={`ed-${end_date}`}
             type="date"
             defaultValue={end_date}
             onChange={e => navigate({ end_date: e.target.value, range: 'custom' })}
