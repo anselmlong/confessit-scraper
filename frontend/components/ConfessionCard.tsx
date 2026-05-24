@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Post } from '@/lib/types';
+import { formatConfessionDate } from '@/lib/date';
 
 interface ConfessionCardProps {
   post: Post;
@@ -69,7 +70,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
             {post.reply_count > 0 && (
               <span aria-label={`${post.reply_count} replies`}>💬 {post.reply_count}</span>
             )}
-            <span>{(post.date ?? '').slice(0, 10)}</span>
+            <span>{formatConfessionDate(post.date ?? '')}</span>
           </div>
         </div>
       </div>
