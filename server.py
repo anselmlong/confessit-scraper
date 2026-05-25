@@ -695,7 +695,7 @@ _COPYPASTA_TEMPLATES = {
         "name": "ST2334/Math vs CS",
     },
     "time_reminder": {
-        "triggers": ["just wanted to remind y'all that the time now is"],
+        "triggers": ["time now is"],
         "name": "Time Reminder",
     },
     "graduated_danang": {
@@ -779,6 +779,8 @@ def _compute_copypasta():
         for r in rows:
             pid, txt, content, date_str, rc, rpc, fw = r
             body = (content or txt or "").lower()
+            # Normalize apostrophes and other unicode punctuation for matching
+            body = body.replace("\u2019", "'").replace("\u2018", "'")
             if not all(t in body for t in template["triggers"]):
                 continue
             score = (rc or 0) * 1 + (rpc or 0) * 2 + (fw or 0) * 3
