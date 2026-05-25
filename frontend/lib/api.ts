@@ -81,3 +81,7 @@ export async function getInsights() {
 export async function getLandscape() {
   return fetchJSON(`${API}/api/landscape`);
 }
+
+export async function getCopypastas() {
+  return fetchJSON(`${API}/api/copypasta`);
+}

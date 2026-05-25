@@ -1,7 +1,7 @@
 export const revalidate = 3600; // re-render at most once per hour
 
 import { Nav } from '@/components/Nav';
-import { getStats, getMonthlyCounts, getLandscape, getInsights } from '@/lib/api';
+import { getStats, getMonthlyCounts, getLandscape, getInsights, getCopypastas } from '@/lib/api';
 
 /* ── Helpers ───────────────────────────────────────── */
 
@@ -92,11 +92,12 @@ function BarRow({ label, value, maxVal, color }: { label: string; value: number 
 /* ── Page ───────────────────────────────────────────── */
 
 export default async function StatsPage() {
-  const [landscape, stats, monthly, insights] = await Promise.all([
+  const [landscape, stats, monthly, insights, copypasta] = await Promise.all([
     getLandscape(),
     getStats(),
     getMonthlyCounts(),
     getInsights(),
+    getCopypastas(),
   ]);
 
   const regions = landscape?.cluster_taxonomy?.["4_main_regions"];
@@ -331,6 +332,62 @@ export default async function StatsPage() {
             <img src="/blog/monthly_activity.png" alt="Monthly activity" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="space-y-2">
               {monthly.map(m => (<MonthlyBar key={m.month} month={m.month} count={m.cnt} max={maxMonthly} />))}
+            </div>
+          </Section>
+        )}
+
+        {copypasta?.clusters?.length > 0 && (
+          <Section title="Copypasta Watch">
+            <p className="text-[0.88rem] leading-relaxed mb-4" style={{ color: 'var(--text-2)' }}>
+              Repeated templates and copypastas circulating in the channel. <strong>{copypasta.exact_duplicates.total_duplicate_posts.toLocaleString()} posts</strong> ({copypasta.exact_duplicates.unique_texts} unique texts) are exact duplicates — <strong>{copypasta.exact_duplicates.pct_of_all_posts}%</strong> of all confessions.
+            </p>
+            <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.clusters.length}</div>
+                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Copypasta Templates</div>
+              </div>
+              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.exact_duplicates.unique_texts}</div>
+                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Unique Repeated Texts</div>
+              </div>
+              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.exact_duplicates.total_duplicate_posts.toLocaleString()}</div>
+                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Duplicate Posts</div>
+              </div>
+              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
+                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.exact_duplicates.pct_of_all_posts}%</div>
+                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Of All Posts</div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {copypasta.clusters.map((c: any) => (
+                <a key={c.key} href={`/post/${c.sample_id}`}
+                   className="flex items-start gap-2.5 px-1 py-2.5 no-underline transition-colors rounded-lg hover:-translate-y-px"
+                   style={{ color: 'var(--text-1)' }}>
+                  <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
+                    <span className="text-base font-black leading-none" style={{ color: 'var(--orange)' }}>{c.count}</span>
+                    <span className="text-[0.6rem] uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>posts</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="font-semibold text-[0.82rem]">{c.name}</span>
+                      {c.is_trending && (
+                        <span className="text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm"
+                              style={{ background: 'var(--orange)', color: '#000' }}>Trending</span>
+                      )}
+                    </div>
+                    <div className="text-[0.75rem] leading-snug line-clamp-2" style={{ color: 'var(--text-muted)' }}>
+                      "{c.sample_text.slice(0, 150)}{c.sample_text.length > 150 ? '…' : ''}"
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-[0.68rem]" style={{ color: 'var(--text-3)' }}>
+                      <span>avg score <strong style={{ color: 'var(--blue)' }}>{c.avg_score}</strong></span>
+                      <span>avg reactions <strong style={{ color: 'var(--blue)' }}>{c.avg_reactions}</strong></span>
+                      <span>{c.trend_30d} in last 30d</span>
+                    </div>
+                  </div>
+                  <span className="text-[0.65rem] shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>#{c.sample_id}</span>
+                </a>
+              ))}
             </div>
           </Section>
         )}
