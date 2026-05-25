@@ -51,3 +51,24 @@ export interface MonthlyCount {
 export type SortKey = 'time' | 'reactions' | 'replies' | 'score';
 export type RangeKey = 'week' | 'month' | 'year' | 'all' | 'custom';
 export type OrderKey = 'asc' | 'desc';
+
+export interface CopypastaCluster {
+  key: string;
+  name: string;
+  count: number;
+  avg_score: number;
+  avg_reactions: number;
+  sample_text: string;
+  sample_id: number;
+  trend_30d: number;
+  is_trending: boolean;
+}
+
+export interface CopypastaData {
+  clusters: CopypastaCluster[];
+  exact_duplicates: {
+    unique_texts: number;
+    total_duplicate_posts: number;
+    pct_of_all_posts: number;
+  };
+}

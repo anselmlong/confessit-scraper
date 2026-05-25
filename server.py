@@ -686,6 +686,151 @@ def api_insights():
     return jsonify(result)
 
 
+# ── Copypasta Detection ─────────────────────────────────────────────────────
+
+_COPYPASTA_TEMPLATES = {
+    "st2334_copypasta": {
+        "triggers": ["never understand why ppl just dowan to take st2334",
+                     "never understand why people would still debate and compare between math and cs"],
+        "name": "ST2334/Math vs CS",
+    },
+    "time_reminder": {
+        "triggers": ["just wanted to remind y'all that the time now is"],
+        "name": "Time Reminder",
+    },
+    "graduated_danang": {
+        "triggers": ["year 4 student that just graduated", "da nang solo"],
+        "name": "Da Nang Trip",
+    },
+    "mcd_story": {
+        "triggers": ["i'm a guy and i work as a service crew in mcd"],
+        "name": "McD Crew Story",
+    },
+    "slay_guy": {
+        "triggers": ["slay guy here, looking for find another slay guy"],
+        "name": "Slay Guy",
+    },
+    "bored_m_chat": {
+        "triggers": ["bored m here looking to chat with another m about"],
+        "name": "Bored M Chat",
+    },
+    "single_touched_starved": {
+        "triggers": ["been single for way too long i m so touched starved"],
+        "name": "Single Touched Starved",
+    },
+    "homeless_osa": {
+        "triggers": ["am homeless, osa doesn't give two shits"],
+        "name": "Homeless / OSA",
+    },
+    "bza_vs_dsa": {
+        "triggers": ["let's settle this", "bza is simply a stronger choice"],
+        "name": "BZA vs DSA",
+    },
+    "asean_scholarship": {
+        "triggers": ["asean scholarship fair", "malaysia and indoen"],
+        "name": "ASEAN Scholarship",
+    },
+    "hall_sublet": {
+        "triggers": ["looking for hall sublet next semester"],
+        "name": "Hall Sublet",
+    },
+    "netflix_chill": {
+        "triggers": ["netfkix and chill", "binge ginny & georgia"],
+        "name": "Netflix & Chill",
+    },
+    "dear_students_osa": {
+        "triggers": ["dear students", "school would like to remind you"],
+        "name": "Fake OSA Letter",
+    },
+    "finding_room": {
+        "triggers": ["finding a room (m) for house, pgpr, utr"],
+        "name": "Finding Room",
+    },
+    "keep_items_campus": {
+        "triggers": ["keep ur items safely on campus in summer break"],
+        "name": "Summer Storage",
+    },
+    "case_competition": {
+        "triggers": ["aag-nus case competition"],
+        "name": "Case Competition",
+    },
+    "crochet_club": {
+        "triggers": ["starting a crochet club"],
+        "name": "Crochet Club",
+    },
+}
+
+
+def _compute_copypasta():
+    from datetime import datetime, timedelta, timezone
+
+    conn = _connect()
+    rows = conn.execute(
+        "SELECT id, text, content, date, reactions_count, reply_count, forwards "
+        "FROM messages WHERE is_reply=0"
+    ).fetchall()
+    conn.close()
+
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+    clusters = []
+    for key, template in _COPYPASTA_TEMPLATES.items():
+        matches = []
+        for r in rows:
+            pid, txt, content, date_str, rc, rpc, fw = r
+            body = (content or txt or "").lower()
+            if not all(t in body for t in template["triggers"]):
+                continue
+            score = (rc or 0) * 1 + (rpc or 0) * 2 + (fw or 0) * 3
+            matches.append((pid, (content or txt or ""), score, rc or 0, date_str or ""))
+
+        if not matches:
+            continue
+
+        scores = [m[2] for m in matches]
+        recent = sum(1 for m in matches if m[4] >= thirty_days_ago)
+        sample = matches[0][1][:200]
+
+        clusters.append({
+            "key": key,
+            "name": template["name"],
+            "count": len(matches),
+            "avg_score": round(sum(scores) / len(scores), 1),
+            "avg_reactions": round(sum(m[3] for m in matches) / len(matches), 1),
+            "sample_text": sample,
+            "sample_id": matches[0][0],
+            "trend_30d": recent,
+            "is_trending": recent >= 3,
+        })
+
+    clusters.sort(key=lambda c: -c["count"])
+
+    # Exact duplicate stats
+    from collections import Counter
+    text_counts = Counter()
+    for r in rows:
+        body = (r[2] or r[1] or "").strip()
+        if body:
+            text_counts[body] += 1
+    exact_dupes = {k: v for k, v in text_counts.items() if v >= 2}
+    dupe_pct = round(len(exact_dupes) / len(text_counts) * 100, 1) if text_counts else 0
+    total_dupe_posts = sum(v for v in exact_dupes.values()) - len(exact_dupes)
+
+    return {
+        "clusters": clusters,
+        "exact_duplicates": {
+            "unique_texts": len(exact_dupes),
+            "total_duplicate_posts": total_dupe_posts,
+            "pct_of_all_posts": dupe_pct,
+        },
+    }
+
+
+@app.route("/api/copypasta")
+def api_copypasta():
+    return jsonify(_cached("copypasta", _compute_copypasta))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5000)
