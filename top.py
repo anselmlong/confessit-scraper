@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Top confessions leaderboard — Reddit-style ranking by engagement score.
 
-Score = reactions × 3 + replies × 2 + forwards
+Score = reactions + replies × 2 + forwards × 3
 
 Usage:
   python top.py                        # top 25 all-time, HTML + table
@@ -41,7 +41,7 @@ console = Console()
 
 
 def _score_expr():
-    return "(reactions_count * 3 + reply_count * 2 + forwards)"
+    return "(reactions_count + reply_count * 2 + forwards * 3)"
 
 
 def get_top(limit: int, days: int | None) -> list[dict]:

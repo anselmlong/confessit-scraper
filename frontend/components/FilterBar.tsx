@@ -136,7 +136,7 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
                     className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[0.72rem] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     style={{ background: 'var(--surface-alt)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
                   >
-                    reactions × 3 + replies × 2 + forwards
+                    reactions + replies × 2 + forwards × 3
                   </div>
                 </div>
               ) : (
