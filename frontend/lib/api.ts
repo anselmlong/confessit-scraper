@@ -2,10 +2,10 @@ import type { Post, Stats, MonthlyCount } from '@/lib/types';
 
 const API = process.env.NEXT_PUBLIC_VPS_API || '';
 
-async function fetchJSON(url: string) {
+async function fetchJSON(url: string, revalidate = 300) {
   if (!API) return null;
   try {
-    const r = await fetch(url, { next: { revalidate: 300 } });
+    const r = await fetch(url, { next: { revalidate } });
     if (!r.ok) return null;
     return r.json();
   } catch { return null; }
@@ -35,7 +35,7 @@ export async function getPosts(opts: {
 /* ── Stats ── */
 
 export async function getStats(): Promise<Stats | null> {
-  const d = await fetchJSON(`${API}/api/stats`);
+  const d = await fetchJSON(`${API}/api/stats`, 3600);
   if (!d) return null;
   return {
     total: d.total_posts, first_date: d.first_date, last_date: d.last_date,
@@ -47,7 +47,7 @@ export async function getStats(): Promise<Stats | null> {
 /* ── Monthly ── */
 
 export async function getMonthlyCounts(): Promise<MonthlyCount[]> {
-  const data = await fetchJSON(`${API}/api/monthly`);
+  const data = await fetchJSON(`${API}/api/monthly`, 3600);
   if (!data) return [];
   return data.map((m: any) => ({ month: m.month, cnt: m.count }));
 }
@@ -75,13 +75,13 @@ export async function getPost(id: number): Promise<{ post: Post; replies: any[];
 /* ── Insights ── */
 
 export async function getInsights() {
-  return fetchJSON(`${API}/api/insights`);
+  return fetchJSON(`${API}/api/insights`, 3600);
 }
 
 export async function getLandscape() {
-  return fetchJSON(`${API}/api/landscape`);
+  return fetchJSON(`${API}/api/landscape`, 3600);
 }
 
 export async function getCopypastas() {
-  return fetchJSON(`${API}/api/copypasta`);
+  return fetchJSON(`${API}/api/copypasta`, 3600);
 }
