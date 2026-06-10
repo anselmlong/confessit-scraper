@@ -10,6 +10,7 @@ interface FilterBarProps {
   n: number;
   q: string;
   order: OrderKey;
+  mode: 'keyword' | 'semantic';
   start_date: string;
   end_date: string;
   total?: number;
@@ -32,12 +33,12 @@ const RANGES: { key: RangeKey; label: string }[] = [
 
 const N_OPTIONS = [25, 50, 100];
 
-export function FilterBar({ sort, range, n, q, order, start_date, end_date, total }: FilterBarProps) {
+export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date, total }: FilterBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
-  const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string; order: string; start_date: string; end_date: string }>) => {
-    const base: Record<string, string> = { sort, range, n: String(n), q, order };
+  const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string; order: string; mode: string; start_date: string; end_date: string }>) => {
+    const base: Record<string, string> = { sort, range, n: String(n), q, order, mode };
     if (start_date) base.start_date = start_date;
     if (end_date) base.end_date = end_date;
     const p = new URLSearchParams(base);
@@ -47,6 +48,7 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
       p.delete('start_date');
       p.delete('end_date');
     }
+    if (p.get('mode') !== 'semantic') p.delete('mode');
     startTransition(() => router.push(`/?${p}`));
   };
 
@@ -72,11 +74,31 @@ export function FilterBar({ sort, range, n, q, order, start_date, end_date, tota
         }}
         className="flex items-center gap-1.5 md:gap-2"
       >
+        <div
+          className="flex rounded-lg border-[1.5px] overflow-hidden shrink-0"
+          style={{ borderColor: 'var(--border)' }}
+          role="group"
+          aria-label="Search mode"
+        >
+          {(['keyword', 'semantic'] as const).map(m => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => mode !== m && navigate({ mode: m })}
+              className="px-2 md:px-3 py-2 md:py-2.5 text-[0.72rem] md:text-[0.78rem] font-semibold border-none cursor-pointer transition-all"
+              style={mode === m
+                ? { background: 'var(--blue)', color: '#fff' }
+                : { background: 'transparent', color: 'var(--text-muted)' }}
+            >
+              {m === 'keyword' ? 'Keyword' : 'Semantic'}
+            </button>
+          ))}
+        </div>
         <input
           name="q"
           key={`search-${q}`}
           defaultValue={q}
-          placeholder="Search confessions…"
+          placeholder={mode === 'semantic' ? 'Describe what you’re looking for…' : 'Search confessions…'}
           className="search-input flex-1 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
           style={{
             background: 'var(--surface)',

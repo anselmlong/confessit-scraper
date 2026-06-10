@@ -166,6 +166,47 @@ def get_posts(days=None, limit=25, sort="reactions", q=None, order="desc", start
     return _enrich(rows)
 
 
+def get_posts_semantic(q, limit=25, days=None, start_date=None, end_date=None):
+    """Rank posts by cosine similarity to the query via sqlite-vec.
+
+    Overfetches the KNN so date filters applied afterwards still leave
+    enough results. Vectors are scanned on disk — nothing large is held
+    in memory per request.
+    """
+    from src.search.semantic import semantic_search_ids
+
+    k = min(max(limit * 4, 50), 200)
+    hits = semantic_search_ids(q, k=k)
+    if not hits:
+        return []
+    rank = {pid: i for i, (pid, _) in enumerate(hits)}
+    sims = dict(hits)
+
+    conn = _connect()
+    placeholders = ",".join("?" * len(rank))
+    sql = (f"SELECT *, {_score_expr()} AS score FROM messages "
+           f"WHERE is_reply=0 AND id IN ({placeholders})")
+    params = list(rank)
+    if days:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        sql += " AND date >= ?"
+        params.append(since)
+    if start_date:
+        sql += " AND date >= ?"
+        params.append(start_date)
+    if end_date:
+        sql += " AND date <= ?"
+        params.append(end_date + "T23:59:59")
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+
+    posts = _enrich(rows)
+    posts.sort(key=lambda p: rank.get(p["id"], len(rank)))
+    for p in posts:
+        p["similarity"] = round(sims.get(p["id"], 0.0), 3)
+    return posts[:limit]
+
+
 def get_overview_stats():
     conn = _connect()
     r = conn.execute("""
@@ -377,18 +418,32 @@ def api_posts():
     order_key = request.args.get("order", "desc")
     limit = min(int(request.args.get("n", 25)), 200)
     q = request.args.get("q", "").strip()
+    mode = request.args.get("mode", "keyword")
     start_date = request.args.get("start_date", "").strip() or None
     end_date = request.args.get("end_date", "").strip() or None
 
-    rows = get_posts(
-        days=RANGES.get(range_key) if not start_date else None,
-        limit=limit,
-        sort=sort_key if sort_key in SORTS else "reactions",
-        order=order_key if order_key in ("asc", "desc") else "desc",
-        q=q or None,
-        start_date=start_date,
-        end_date=end_date,
-    )
+    rows = None
+    if mode == "semantic" and q:
+        try:
+            rows = get_posts_semantic(
+                q,
+                limit=limit,
+                days=RANGES.get(range_key) if not start_date else None,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        except Exception as e:
+            app.logger.warning("semantic search failed, falling back: %s", e)
+    if rows is None:
+        rows = get_posts(
+            days=RANGES.get(range_key) if not start_date else None,
+            limit=limit,
+            sort=sort_key if sort_key in SORTS else "reactions",
+            order=order_key if order_key in ("asc", "desc") else "desc",
+            q=q or None,
+            start_date=start_date,
+            end_date=end_date,
+        )
     return jsonify([{
         "id": p["id"],
         "title": p.get("title") or "",
@@ -400,6 +455,7 @@ def api_posts():
         "score": p["score"],
         "category": p.get("category", ""),
         "views": p.get("views", 0),
+        **({"similarity": p["similarity"]} if "similarity" in p else {}),
     } for p in rows])
 
 
