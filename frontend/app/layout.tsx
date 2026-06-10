@@ -35,6 +35,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             >
               t.me/NUSConfessIT
             </a>
+            <br />
+            Content is mirrored from a public Telegram channel. For removal requests, contact{' '}
+            <a
+              href="mailto:anselmpius@gmail.com"
+              className="inline-block px-1 py-2"
+              style={{ color: 'var(--blue)' }}
+            >
+              anselmpius@gmail.com
+            </a>
           </footer>
         </ThemeProvider>
       </body>

@@ -18,7 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const data = await getPost(parseInt(id, 10));
   const title = data?.post.title || `Confession #${id}`;
-  return { title: `${title} — NUSConfessIT` };
+  return {
+    title: `${title} — NUSConfessIT`,
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function PostPage({ params }: Props) {
