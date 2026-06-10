@@ -104,12 +104,12 @@ app.jinja_env.filters["tgmd"] = _tg_md_to_html
 RANGES = {"week": 7, "month": 30, "year": 365, "all": None}
 SORTS = {
     "time": "date",
-    "score": "(reactions_count * 3 + reply_count * 2 + forwards)",
+    "score": "(reactions_count + reply_count * 2 + forwards * 3)",
     "reactions": "reactions_count",
     "replies": "reply_count",
 }
 
-SCORE_FORMULA = "reactions × 3 + replies × 2 + forwards"
+SCORE_FORMULA = "reactions + replies × 2 + forwards × 3"
 
 
 def _connect():
@@ -119,7 +119,7 @@ def _connect():
 
 
 def _score_expr():
-    return "(reactions_count * 3 + reply_count * 2 + forwards)"
+    return "(reactions_count + reply_count * 2 + forwards * 3)"
 
 
 def _excerpt(text: str, max_chars: int = 300) -> str:
