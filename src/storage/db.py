@@ -252,7 +252,7 @@ def get_top_post_ids(limit: int = 500) -> list[int]:
         rows = conn.execute(
             """SELECT id FROM messages
                WHERE is_reply = 0
-               ORDER BY (reactions_count * 3 + reply_count * 2 + forwards) DESC
+               ORDER BY (reactions_count + reply_count * 2 + forwards * 3) DESC
                LIMIT ?""",
             (limit,),
         ).fetchall()
