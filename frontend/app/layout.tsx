@@ -35,6 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             >
               t.me/NUSConfessIT
             </a>
+            {' '}&middot;{' '}
+            <a href="/launch.mp4" className="inline-block px-1 py-2" style={{ color: 'var(--blue)' }}>
+              20-second tour
+            </a>
             <br />
             Content is mirrored from a public Telegram channel. For removal requests, contact{' '}
             <a
