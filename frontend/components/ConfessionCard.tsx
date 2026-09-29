@@ -35,6 +35,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
       >
         {/* Rank badge */}
         <div
+          aria-hidden="true"
           className="card-rank shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-black text-[0.9rem]"
           style={{ background: 'var(--surface-mid)', color: 'var(--text-3)' }}
         >
@@ -66,11 +67,11 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
                 {post.category}
               </span>
             )}
-            <span aria-label={`${post.reactions_count} reactions`}>❤️ {post.reactions_count}</span>
+            <span><span aria-hidden="true">❤️</span> {post.reactions_count}<span className="sr-only"> reactions</span></span>
             {post.reply_count > 0 && (
-              <span aria-label={`${post.reply_count} replies`}>💬 {post.reply_count}</span>
+              <span><span aria-hidden="true">💬</span> {post.reply_count}<span className="sr-only"> replies</span></span>
             )}
-            <span>{formatConfessionDate(post.date ?? '')}</span>
+            <time dateTime={post.date ?? undefined}>{formatConfessionDate(post.date ?? '')}</time>
           </div>
         </div>
       </div>

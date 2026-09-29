@@ -8,14 +8,18 @@
     --surface-mid:  #e8e2d6;
     --text-1:       #1a1612;
     --text-2:       #4a4438;
-    --text-3:       #7a7060;
-    --text-muted:   #a09080;
+    --text-3:       #5e5547;
+    --text-muted:   #6f6354;
     --border:       #d8d0c0;
     --border-light: #e8e2d6;
     --blue:         #b81c10;
     --blue-mid:     #d42016;
     --blue-light:   #f5e0de;
+    /* Solid accent fill behind white text (pills, buttons, bars) */
+    --fill:         #b81c10;
+    --on-fill:      #ffffff;
     --orange:       #8a6020;
+    --on-orange:    #ffffff;
     --mark-bg:      #f5e8c0;
     --nav-bg:       #1a1612;
     --font-display: "Bricolage Grotesque", system-ui, sans-serif;
@@ -30,14 +34,17 @@
     /* Text: warmth lives here, not in the backgrounds */
     --text-1:       #e8e0ca;
     --text-2:       #9a8e78;
-    --text-3:       #685e50;
-    --text-muted:   #3e3a2e;
+    --text-3:       #8f846f;
+    --text-muted:   #857b68;
     --border:       #1e1c18;
     --border-light: #141210;
-    --blue:         #d44535;
+    --blue:         #e2553f;
     --blue-mid:     #b83325;
     --blue-light:   #200c08;
+    --fill:         #b83325;
+    --on-fill:      #ffffff;
     --orange:       #c08018;
+    --on-orange:    #0a0806;
     --mark-bg:      #2e2008;
     --nav-bg:       #040402;
   }
@@ -52,9 +59,14 @@
     transition: background-color 0.22s ease, color 0.22s ease;
   }
 
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+
   ::selection {
-    background: var(--blue);
-    color: #fff;
+    background: var(--fill);
+    color: var(--on-fill);
   }
 
   mark {

@@ -8,17 +8,17 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="w-[34px] h-[34px]" />;
+  if (!mounted) return <div className="w-10 h-10" />;
 
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      aria-label="Toggle dark mode"
-      className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-base
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="w-10 h-10 rounded-full flex items-center justify-center text-base
                  bg-white/10 border border-white/20 text-white/85 cursor-pointer
                  hover:bg-white/20 transition-all duration-200 hover:rotate-[22deg]"
     >
-      {theme === 'dark' ? '☀️' : '🌙'}
+      <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
     </button>
   );
 }

@@ -58,8 +58,8 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
 
   const pillBase =
     'text-[0.75rem] md:text-[0.81rem] font-semibold px-2 md:px-3 py-1 md:py-1.5 rounded-full border-[1.5px] no-underline ' +
-    'transition-all cursor-pointer whitespace-nowrap';
-  const pillActive = 'text-white border-[var(--blue)] bg-[var(--blue)]';
+    'pointer-coarse:min-h-10 pointer-coarse:px-3 transition-colors cursor-pointer whitespace-nowrap';
+  const pillActive = 'text-[var(--on-fill)] border-[var(--fill)] bg-[var(--fill)]';
   const pillInactive =
     'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]';
 
@@ -72,7 +72,8 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
           const fd = new FormData(e.currentTarget);
           navigate({ q: String(fd.get('q') ?? '') });
         }}
-        className="flex items-center gap-1.5 md:gap-2"
+        className="flex flex-wrap items-center gap-2"
+        role="search"
       >
         <div
           className="flex rounded-lg border-[1.5px] overflow-hidden shrink-0"
@@ -85,21 +86,24 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
               key={m}
               type="button"
               onClick={() => mode !== m && navigate({ mode: m })}
-              className="px-2 md:px-3 py-2 md:py-2.5 text-[0.72rem] md:text-[0.78rem] font-semibold border-none cursor-pointer transition-all"
+              aria-pressed={mode === m}
+              className="px-3 py-2 md:py-2.5 text-[0.75rem] md:text-[0.78rem] font-semibold border-none cursor-pointer transition-colors"
               style={mode === m
-                ? { background: 'var(--blue)', color: '#fff' }
-                : { background: 'transparent', color: 'var(--text-muted)' }}
+                ? { background: 'var(--fill)', color: 'var(--on-fill)' }
+                : { background: 'transparent', color: 'var(--text-3)' }}
             >
               {m === 'keyword' ? 'Keyword' : 'Semantic'}
             </button>
           ))}
         </div>
+        <div className="flex flex-1 min-w-[15rem] items-center gap-2">
         <input
           name="q"
           key={`search-${q}`}
           defaultValue={q}
+          aria-label={mode === 'semantic' ? 'Describe what you’re looking for' : 'Search confessions'}
           placeholder={mode === 'semantic' ? 'Describe what you’re looking for…' : 'Search confessions…'}
-          className="search-input flex-1 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
+          className="search-input flex-1 min-w-0 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
           style={{
             background: 'var(--surface)',
             color: 'var(--text-1)',
@@ -108,9 +112,9 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
         />
         <button
           type="submit"
-          className="px-3 md:px-5 py-2 md:py-2.5 rounded-lg font-semibold text-[0.82rem] md:text-[0.88rem] text-white border-none cursor-pointer
-                     transition-all hover:-translate-y-px active:translate-y-px"
-          style={{ background: 'var(--blue)' }}
+          className="shrink-0 px-4 md:px-5 py-2 md:py-2.5 rounded-lg font-semibold text-[0.82rem] md:text-[0.88rem] border-none cursor-pointer
+                     transition-transform hover:-translate-y-px active:translate-y-px"
+          style={{ background: 'var(--fill)', color: 'var(--on-fill)' }}
         >
           Search
         </button>
@@ -119,17 +123,18 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             type="button"
             onClick={() => navigate({ q: '' })}
             aria-label="Clear search"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs border-[1.5px] shrink-0
-                       cursor-pointer transition-all hover:border-[var(--text-2)] hover:text-[var(--text-1)]"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-xs border-[1.5px] shrink-0
+                       cursor-pointer transition-colors hover:border-[var(--text-2)] hover:text-[var(--text-1)]"
             style={{
               borderColor: 'var(--border)',
               color: 'var(--text-muted)',
               background: 'transparent',
             }}
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         )}
+        </div>
       </form>
 
       {/* Sort + Direction toggle */}
@@ -150,12 +155,16 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
                 <div key={key} className="relative group">
                   <button
                     onClick={() => sort === key ? toggleOrder() : navigate({ sort: key, order: 'desc' })}
+                    aria-pressed={sort === key}
+                    aria-describedby="score-formula"
                     className={`${pillBase} ${sort === key ? pillActive : pillInactive}`}
                   >
                     {sort === key ? (order === 'desc' ? '↓ ' : '↑ ') : ''}{label}
                   </button>
                   <div
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[0.72rem] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    id="score-formula"
+                    role="tooltip"
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[0.72rem] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10"
                     style={{ background: 'var(--surface-alt)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
                   >
                     reactions + replies × 2 + forwards × 3
@@ -165,6 +174,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
                 <button
                   key={key}
                   onClick={() => sort === key ? toggleOrder() : navigate({ sort: key, order: 'desc' })}
+                  aria-pressed={sort === key}
                   className={`${pillBase} ${sort === key ? pillActive : pillInactive}`}
                 >
                   {sort === key ? (order === 'desc' ? '↓ ' : '↑ ') : ''}{label}
@@ -174,7 +184,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
           </div>
         </div>
 
-        <div className="w-px h-5 shrink-0" style={{ background: 'var(--border)' }} />
+        <div className="hidden md:block w-px h-5 shrink-0" aria-hidden="true" style={{ background: 'var(--border)' }} />
 
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -188,6 +198,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
               <button
                 key={key}
                 onClick={() => navigate({ range: key })}
+                aria-pressed={range === key}
                 className={`${pillBase} ${range === key ? pillActive : pillInactive}`}
               >
                 {label}
@@ -205,16 +216,18 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             type="date"
             defaultValue={start_date}
             onChange={e => navigate({ start_date: e.target.value, range: 'custom' })}
-            className="px-3 py-1.5 rounded-lg text-[0.82rem] border-[1.5px] outline-none font-[inherit]"
+            aria-label="From date"
+            className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border-[1.5px] font-[inherit]"
             style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
           />
-          <span className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>→</span>
+          <span className="text-[0.78rem]" aria-hidden="true" style={{ color: 'var(--text-muted)' }}>→</span>
           <input
             key={`ed-${end_date}`}
             type="date"
             defaultValue={end_date}
             onChange={e => navigate({ end_date: e.target.value, range: 'custom' })}
-            className="px-3 py-1.5 rounded-lg text-[0.82rem] border-[1.5px] outline-none font-[inherit]"
+            aria-label="To date"
+            className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border-[1.5px] font-[inherit]"
             style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
           />
         </div>
@@ -239,14 +252,16 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             </>
           )}
         </p>
-        <div className="flex gap-1 md:gap-1.5">
+        <div className="flex gap-1 md:gap-1.5" role="group" aria-label="Posts per page">
           {N_OPTIONS.map(val => (
             <button
               key={val}
               onClick={() => navigate({ n: val })}
-              className={`text-[0.72rem] md:text-[0.78rem] px-2 md:px-3 py-1 md:py-1.5 rounded-xl border-[1.5px] cursor-pointer transition-all
+              aria-pressed={n === val}
+              aria-label={`Show ${val} posts`}
+              className={`text-[0.72rem] md:text-[0.78rem] px-2 md:px-3 py-1 md:py-1.5 pointer-coarse:min-h-10 pointer-coarse:min-w-11 rounded-xl border-[1.5px] cursor-pointer transition-colors
                 ${n === val
-                  ? 'text-white border-[var(--blue)] bg-[var(--blue)]'
+                  ? 'text-[var(--on-fill)] border-[var(--fill)] bg-[var(--fill)]'
                   : 'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]'}`}
             >
               {val}
