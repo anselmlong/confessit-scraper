@@ -14,9 +14,9 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="no-underline font-semibold px-6 py-3 rounded-xl text-white
-                     transition-all hover:-translate-y-0.5 inline-block"
-          style={{ background: 'var(--blue)' }}
+          className="no-underline font-semibold px-6 py-3 rounded-xl
+                     transition-transform hover:-translate-y-0.5 inline-block"
+          style={{ background: 'var(--fill)', color: 'var(--on-fill)' }}
         >
           ← Back to Overview
         </Link>

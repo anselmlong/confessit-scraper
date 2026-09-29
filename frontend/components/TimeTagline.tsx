@@ -18,6 +18,10 @@ export function TimeTagline() {
     const entry = TAGLINES.find(([max]) => h < max);
     setMsg(entry ? entry[1] : TAGLINES[TAGLINES.length - 1][1]);
   }, []);
-  if (!msg) return null;
-  return <p className="text-white/50 text-xs mt-1 italic">{msg}</p>;
+  // Reserve the line before hydration so the filter bar doesn't jump
+  return (
+    <p className="time-tagline text-[0.8rem] italic min-h-[1.3rem] mb-2 md:mb-3 px-1" style={{ color: 'var(--text-3)' }}>
+      {msg}
+    </p>
+  );
 }

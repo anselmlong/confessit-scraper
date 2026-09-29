@@ -42,13 +42,13 @@ export default async function PostPage({ params }: Props) {
           <Link href="/" className="no-underline font-medium hover:opacity-70 transition-opacity" style={{ color: 'var(--text-2)' }}>
             ← All Posts
           </Link>
-          <span style={{ color: 'var(--border)' }}>·</span>
-          <span>{formatConfessionDate(post.date || '')}</span>
-          <span>❤️ <strong style={{ color: 'var(--text-2)' }}>{post.reactions_count}</strong></span>
-          {post.reply_count > 0 && <span>💬 <strong style={{ color: 'var(--text-2)' }}>{post.reply_count}</strong></span>}
+          <span aria-hidden="true" style={{ color: 'var(--border)' }}>·</span>
+          <time dateTime={post.date || undefined}>{formatConfessionDate(post.date || '')}</time>
+          <span><span aria-hidden="true">❤️</span> <strong style={{ color: 'var(--text-2)' }}>{post.reactions_count}</strong><span className="sr-only"> reactions</span></span>
+          {post.reply_count > 0 && <span><span aria-hidden="true">💬</span> <strong style={{ color: 'var(--text-2)' }}>{post.reply_count}</strong><span className="sr-only"> replies</span></span>}
           <a href={tgUrl} target="_blank" rel="noopener noreferrer"
              className="no-underline hover:opacity-70 transition-opacity ml-auto" style={{ color: 'var(--text-muted)' }}>
-            Telegram ↗
+            Telegram <span aria-hidden="true">↗</span><span className="sr-only">(opens in new tab)</span>
           </a>
         </div>
 
