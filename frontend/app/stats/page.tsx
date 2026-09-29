@@ -64,9 +64,9 @@ function MonthlyBar({ month, count, max }: { month: string; count: number; max: 
     <div className="flex items-center gap-2.5 text-[0.78rem]">
       <span className="w-14 text-right shrink-0" style={{ color: 'var(--text-3)' }}>{month}</span>
       <div className="h-[22px] rounded-sm min-w-[2px]" style={{
-        width: `${(count / max) * 100}%`, background: 'var(--blue)',
+        width: `${(count / max) * 100}%`, background: 'var(--fill)',
       }} />
-      <span style={{ color: 'var(--text-3)', minWidth: '2rem' }}>{count}</span>
+      <span className="tabular-nums" style={{ color: 'var(--text-3)', minWidth: '2rem' }}>{count}</span>
     </div>
   );
 }
@@ -74,17 +74,17 @@ function MonthlyBar({ month, count, max }: { month: string; count: number; max: 
 function BarRow({ label, value, maxVal, color }: { label: string; value: number | string; maxVal: number; color?: string }) {
   const numVal = typeof value === 'string' ? parseFloat(value) : value;
   const pct = maxVal > 0 ? (numVal / maxVal) * 100 : 0;
-  const c = color || 'var(--blue)';
+  const c = color || 'var(--fill)';
   return (
     <div className="flex items-center gap-2 text-[0.82rem] mb-2">
-      <span className="w-36 text-right shrink-0 truncate" style={{ color: 'var(--text-2)' }}>{label}</span>
+      <span className="w-14 sm:w-36 text-right shrink-0 truncate" style={{ color: 'var(--text-2)' }}>{label}</span>
       <div className="h-[18px] rounded-sm flex-1 min-w-0" style={{ background: 'var(--surface-mid)' }}>
-        <div className="h-full rounded-sm flex items-center justify-end px-1.5 text-[0.65rem] font-bold text-white"
-             style={{ width: `${Math.min(pct, 100)}%`, background: c }}>
+        <div className="h-full rounded-sm flex items-center justify-end px-1.5 text-[0.68rem] font-bold tabular-nums"
+             style={{ width: `${Math.min(pct, 100)}%`, background: c, color: 'var(--on-fill)' }}>
           {pct > 15 ? value : ''}
         </div>
       </div>
-      {pct <= 15 && <span className="text-[0.72rem] font-bold shrink-0" style={{ color }}>{value}</span>}
+      {pct <= 15 && <span className="text-[0.72rem] font-bold shrink-0 tabular-nums" style={{ color: color || 'var(--blue)' }}>{value}</span>}
     </div>
   );
 }
@@ -118,6 +118,7 @@ export default async function StatsPage() {
       <Nav activePage="stats" />
 
       <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6 space-y-1">
+        <h1 className="sr-only">NUSConfessIT channel stats</h1>
         {stats && (
           <Section title="Overview">
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
@@ -136,7 +137,7 @@ export default async function StatsPage() {
               Engagement follows a <strong>long tail distribution</strong> — most posts score under 50,
               while a tiny fraction of viral content captures the bulk of attention.
             </p>
-            <img src="/blog/score_distribution.png" alt="Score distribution" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/score_distribution.png" width={1480} height={730} loading="lazy" decoding="async" alt="Histogram of post scores: most posts score under 50, with a long tail of rare viral posts" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="flex flex-wrap gap-4 text-[0.88rem]">
               {['mean','median','p75','p90','max'].map(k => (
                 <div key={k} className="flex flex-col items-center min-w-[80px]">
@@ -156,7 +157,7 @@ export default async function StatsPage() {
               Categories extracted from confession title text — <strong>91% of posts</strong> have a hashtag prefix
               like <code>#studies</code>, <code>#romance</code>, or <code>#campus</code>.
             </p>
-            <img src="/blog/category_breakdown.png" alt="Category breakdown" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/category_breakdown.png" width={1484} height={880} loading="lazy" decoding="async" alt="Bar chart of confession counts by hashtag category" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
           </Section>
         )}
 
@@ -178,7 +179,7 @@ export default async function StatsPage() {
               UMAP projection of all 72K confessions — a <strong>continuous gradient</strong> with
               viral posts concentrated in specific regions.
             </p>
-            <img src="/blog/umap_landscape.png" alt="UMAP landscape" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/umap_landscape.webp" width={1600} height={724} loading="lazy" decoding="async" alt="UMAP scatter plot of all confessions, coloured by viral status and score intensity" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
           </Section>
         )}
 
@@ -192,20 +193,21 @@ export default async function StatsPage() {
               const absBoost = Math.abs(f.boost);
               const pct = maxFeatureBoost > 0 ? (absBoost / maxFeatureBoost) * 100 : 0;
               const isPositive = f.boost >= 0;
-              const barColor = isPositive ? 'var(--blue)' : 'var(--orange)';
+              const barColor = isPositive ? 'var(--fill)' : 'var(--orange)';
+              const barInk = isPositive ? 'var(--on-fill)' : 'var(--on-orange)';
               const pctColor = isPositive ? 'var(--blue)' : 'var(--orange)';
               return (
                 <div key={f.feature} className="flex items-center gap-2 text-[0.82rem] mb-2.5">
-                  <span className="w-36 text-right shrink-0 truncate font-medium" style={{ color: 'var(--text-1)' }}>
+                  <span className="w-24 sm:w-36 text-right shrink-0 truncate font-medium" style={{ color: 'var(--text-1)' }}>
                     {f.feature}
                   </span>
                   <div className="h-[18px] rounded-sm flex-1 min-w-0" style={{ background: 'var(--surface-mid)' }}>
-                    <div className="h-full rounded-sm flex items-center px-1.5 text-[0.65rem] font-bold text-white"
-                         style={{ width: `${Math.min(pct, 100)}%`, background: barColor }}>
+                    <div className="h-full rounded-sm flex items-center px-1.5 text-[0.68rem] font-bold tabular-nums whitespace-nowrap"
+                         style={{ width: `${Math.min(pct, 100)}%`, background: barColor, color: barInk }}>
                       {pct > 12 ? `${isPositive ? '+' : ''}${f.boost}` : ''}
                     </div>
                   </div>
-                  <span className="text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-[0.68rem] w-12 sm:w-14 shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     r={f.correlation}
                   </span>
                   {pct <= 12 && (
@@ -214,7 +216,7 @@ export default async function StatsPage() {
                     </span>
                   )}
                   {f.has_pct !== undefined && (
-                    <span className="text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    <span className="hidden sm:inline text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
                       {f.has_pct}% use it
                     </span>
                   )}
@@ -259,19 +261,19 @@ export default async function StatsPage() {
             <div className="space-y-2">
               {insights.category_virality.map((c: any) => (
                 <div key={c.category} className="flex items-center gap-2 text-[0.82rem]">
-                  <span className="w-36 text-right shrink-0 truncate font-medium" style={{ color: 'var(--text-1)' }}>
+                  <span className="w-24 sm:w-36 text-right shrink-0 truncate font-medium" style={{ color: 'var(--text-1)' }}>
                     {c.category}
                   </span>
                   <div className="h-[18px] rounded-sm flex-1 min-w-0" style={{ background: 'var(--surface-mid)' }}>
-                    <div className="h-full rounded-sm flex items-center px-1.5 text-[0.65rem] font-bold text-white"
-                         style={{ width: `${(c.viral_rate / maxCatViral) * 100}%`, background: 'var(--orange)' }}>
-                      {(c.viral_rate / maxCatViral) > 0.15 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
+                    <div className="h-full rounded-sm flex items-center px-1.5 text-[0.68rem] font-bold tabular-nums whitespace-nowrap"
+                         style={{ width: `${(c.viral_rate / maxCatViral) * 100}%`, background: 'var(--orange)', color: 'var(--on-orange)' }}>
+                      {(c.viral_rate / maxCatViral) > 0.3 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
                     </div>
                   </div>
-                  <span className="text-[0.68rem] w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>
-                    {(c.viral_rate / maxCatViral) <= 0.15 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
+                  <span className="text-[0.68rem] w-9 shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                    {(c.viral_rate / maxCatViral) <= 0.3 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
                   </span>
-                  <span className="text-[0.68rem] shrink-0" style={{ color: 'var(--text-muted)' }}>
+                  <span className="hidden sm:inline w-28 text-right text-[0.68rem] shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     avg {c.avg_score} · n={c.post_count}
                   </span>
                 </div>
@@ -283,7 +285,7 @@ export default async function StatsPage() {
         {insights?.length_impact && (
           <Section title="Post Length vs Engagement">
             <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
-              Longer posts perform significantly better — <strong>long posts (&gt;80 words) average
+              Longer posts perform significantly better — <strong>long posts (&gt;80 words) average{' '}
               {insights.length_impact.find((l: any) => l.label === 'long')?.avg_score ?? ''}</strong>,
               nearly double the medium post average.
             </p>
@@ -307,10 +309,10 @@ export default async function StatsPage() {
 
         {landscape?.top_posts?.length > 0 && (
           <Section title="Top 10 Most Engaged Posts">
-            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            <div className="divide-y divide-[var(--border)]">
               {landscape.top_posts.map((post: any, i: number) => (
                 <a key={post.id} href={`/post/${post.id}`}
-                   className="flex items-start gap-3 px-1 py-2.5 no-underline transition-colors rounded-lg hover:-translate-y-px"
+                   className="list-row flex items-start gap-3 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <span className="text-[0.7rem] font-black w-5 text-right shrink-0 mt-0.5"
                         style={{ color: i < 3 ? 'var(--orange)' : 'var(--text-muted)' }}>#{i + 1}</span>
@@ -329,7 +331,7 @@ export default async function StatsPage() {
 
         {monthly.length > 0 && (
           <Section title="Monthly Activity">
-            <img src="/blog/monthly_activity.png" alt="Monthly activity" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/monthly_activity.png" width={1780} height={735} loading="lazy" decoding="async" alt="Line chart of confessions posted per month" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="space-y-2">
               {monthly.map(m => (<MonthlyBar key={m.month} month={m.month} count={m.cnt} max={maxMonthly} />))}
             </div>
@@ -362,7 +364,7 @@ export default async function StatsPage() {
             <div className="space-y-2">
               {copypasta.clusters.map((c: any) => (
                 <a key={c.key} href={`/post/${c.sample_id}`}
-                   className="flex items-start gap-2.5 px-1 py-2.5 no-underline transition-colors rounded-lg hover:-translate-y-px"
+                   className="list-row flex items-start gap-2.5 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
                     <span className="text-base font-black leading-none" style={{ color: 'var(--orange)' }}>{c.count}</span>
@@ -373,7 +375,7 @@ export default async function StatsPage() {
                       <span className="font-semibold text-[0.82rem]">{c.name}</span>
                       {c.is_trending && (
                         <span className="text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm"
-                              style={{ background: 'var(--orange)', color: '#000' }}>Trending</span>
+                              style={{ background: 'var(--orange)', color: 'var(--on-orange)' }}>Trending</span>
                       )}
                     </div>
                     <div className="text-[0.75rem] leading-snug line-clamp-2" style={{ color: 'var(--text-muted)' }}>

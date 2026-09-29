@@ -35,6 +35,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
       >
         {/* Rank badge */}
         <div
+          aria-hidden="true"
           className="card-rank shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-black text-[0.9rem]"
           style={{ background: 'var(--surface-mid)', color: 'var(--text-3)' }}
         >
@@ -45,17 +46,17 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
         <div className="flex-1 min-w-0">
           {post.title && (
             <div
-              className="font-bold text-[1rem] mb-1.5 leading-snug"
+              className="font-bold text-[1rem] mb-1.5 leading-snug text-balance"
               style={{ color: 'var(--blue)' }}
             >
               {highlight(post.title, q)}
             </div>
           )}
-          <div className="card-excerpt text-[0.93rem] leading-relaxed line-clamp-5" style={{ color: 'var(--text-2)' }}>
+          <div className="card-excerpt text-[0.93rem] leading-relaxed line-clamp-5 text-pretty" style={{ color: 'var(--text-2)' }}>
             {highlight(post.excerpt, q)}
           </div>
           <div
-            className="card-meta mt-2.5 flex gap-2 flex-wrap text-[0.72rem] md:text-[0.74rem] items-center"
+            className="card-meta mt-2.5 flex gap-x-2.5 gap-y-1 flex-wrap tabular-nums text-[0.72rem] md:text-[0.74rem] items-center"
             style={{ color: 'var(--text-muted)' }}
           >
             {post.category && post.category !== 'Others' && (
@@ -66,11 +67,11 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
                 {post.category}
               </span>
             )}
-            <span aria-label={`${post.reactions_count} reactions`}>❤️ {post.reactions_count}</span>
+            <span><span aria-hidden="true">❤️</span> {post.reactions_count}<span className="sr-only"> reactions</span></span>
             {post.reply_count > 0 && (
-              <span aria-label={`${post.reply_count} replies`}>💬 {post.reply_count}</span>
+              <span><span aria-hidden="true">💬</span> {post.reply_count}<span className="sr-only"> replies</span></span>
             )}
-            <span>{formatConfessionDate(post.date ?? '')}</span>
+            <time dateTime={post.date ?? undefined}>{formatConfessionDate(post.date ?? '')}</time>
           </div>
         </div>
       </div>

@@ -8,16 +8,21 @@
     --surface-mid:  #e8e2d6;
     --text-1:       #1a1612;
     --text-2:       #4a4438;
-    --text-3:       #7a7060;
-    --text-muted:   #a09080;
+    --text-3:       #5e5547;
+    --text-muted:   #6f6354;
     --border:       #d8d0c0;
     --border-light: #e8e2d6;
     --blue:         #b81c10;
     --blue-mid:     #d42016;
     --blue-light:   #f5e0de;
+    /* Solid accent fill behind white text (pills, buttons, bars) */
+    --fill:         #b81c10;
+    --on-fill:      #ffffff;
     --orange:       #8a6020;
+    --on-orange:    #ffffff;
     --mark-bg:      #f5e8c0;
     --nav-bg:       #1a1612;
+    color-scheme: light;
     --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   }
 
@@ -30,19 +35,27 @@
     /* Text: warmth lives here, not in the backgrounds */
     --text-1:       #e8e0ca;
     --text-2:       #9a8e78;
-    --text-3:       #685e50;
-    --text-muted:   #3e3a2e;
-    --border:       #1e1c18;
+    --text-3:       #8f846f;
+    --text-muted:   #857b68;
+    --border:       #2a2620;
     --border-light: #141210;
-    --blue:         #d44535;
+    --blue:         #e2553f;
     --blue-mid:     #b83325;
     --blue-light:   #200c08;
+    --fill:         #b83325;
+    --on-fill:      #ffffff;
     --orange:       #c08018;
+    --on-orange:    #0a0806;
     --mark-bg:      #2e2008;
     --nav-bg:       #040402;
+    color-scheme: dark;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scrollbar-color: var(--text-muted) var(--bg);
+  }
 
   body {
     background: var(--bg);
@@ -52,21 +65,42 @@
     transition: background-color 0.22s ease, color 0.22s ease;
   }
 
-  ::selection {
-    background: var(--blue);
-    color: #fff;
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
   }
 
+  ::selection {
+    background: var(--fill);
+    color: var(--on-fill);
+  }
+
+  input::placeholder { color: var(--text-3); opacity: 1; }
+
+  /* Matplotlib charts are rendered on white; dim them so they don't glare at night */
+  html.dark .chart-img { filter: brightness(0.82) contrast(1.05); }
+
+  /* Search matches get swiped with a highlighter, left to right */
   mark {
-    background: var(--mark-bg);
+    color: inherit;
+    background: linear-gradient(var(--mark-bg), var(--mark-bg)) no-repeat 0 0 / 100% 100%;
     border-radius: 2px;
     padding: 0 2px;
+    animation: highlighter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+  }
+  @keyframes highlighter {
+    from { background-size: 0% 100%; }
+  }
+
+  .time-tagline:not(:empty) {
+    animation: reading-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Reading zone (post page prose) */
   .reading-zone p       { margin-bottom: 1.1em; }
   .reading-zone p:last-child { margin-bottom: 0; }
-  .reading-zone ul      { margin: 0.2em 0 1.1em 1.6em; }
+  .reading-zone ul      { margin: 0.2em 0 1.1em 1.6em; list-style: disc; }
+  .reading-zone ul li::marker { color: var(--text-3); }
   .reading-zone ul li   { margin-bottom: 0.4em; }
   .reading-zone hr      { border: none; border-top: 1px solid var(--border); margin: 1.2em 0; }
   .reading-zone code    { background: var(--surface-alt); border-radius: 4px; padding: 1px 6px; font-size: 0.9em; }
@@ -144,6 +178,20 @@
     border-color: var(--blue) !important;
     box-shadow: 0 0 0 3px var(--blue-light);
   }
+
+  /* Filter navigation in flight */
+  .pending-dots::after {
+    content: '…';
+    display: inline-block;
+    animation: pending-pulse 1s ease-in-out infinite;
+  }
+  @keyframes pending-pulse {
+    50% { opacity: 0.2; }
+  }
+
+  /* Stats list rows (top posts, copypasta) */
+  .list-row { transition: background-color 0.15s ease; }
+  .list-row:hover { background: var(--surface-alt); }
 
   /* Reading zone entrance */
   .reading-zone-entry {
