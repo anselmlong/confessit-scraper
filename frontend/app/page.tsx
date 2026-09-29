@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { Nav } from '@/components/Nav';
 import { FilterBar } from '@/components/FilterBar';
 import { ConfessionCard } from '@/components/ConfessionCard';
+import { TimeTagline } from '@/components/TimeTagline';
 import { getPosts, getStats } from '@/lib/api';
 import type { SortKey, RangeKey } from '@/lib/types';
 
@@ -38,6 +39,7 @@ export default async function Home({
 
       <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6">
         <h1 className="sr-only">NUSConfessIT confessions</h1>
+        <TimeTagline />
         <FilterBar sort={sort} range={range} n={n} q={q} order={order} mode={mode} start_date={start_date || ''} end_date={end_date || ''} total={total} />
 
         <div className="mb-5">

@@ -80,10 +80,20 @@
   /* Matplotlib charts are rendered on white; dim them so they don't glare at night */
   html.dark .chart-img { filter: brightness(0.82) contrast(1.05); }
 
+  /* Search matches get swiped with a highlighter, left to right */
   mark {
-    background: var(--mark-bg);
+    color: inherit;
+    background: linear-gradient(var(--mark-bg), var(--mark-bg)) no-repeat 0 0 / 100% 100%;
     border-radius: 2px;
     padding: 0 2px;
+    animation: highlighter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+  }
+  @keyframes highlighter {
+    from { background-size: 0% 100%; }
+  }
+
+  .time-tagline:not(:empty) {
+    animation: reading-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Reading zone (post page prose) */
