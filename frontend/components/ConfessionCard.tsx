@@ -46,17 +46,17 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
         <div className="flex-1 min-w-0">
           {post.title && (
             <div
-              className="font-bold text-[1rem] mb-1.5 leading-snug"
+              className="font-bold text-[1rem] mb-1.5 leading-snug text-balance"
               style={{ color: 'var(--blue)' }}
             >
               {highlight(post.title, q)}
             </div>
           )}
-          <div className="card-excerpt text-[0.93rem] leading-relaxed line-clamp-5" style={{ color: 'var(--text-2)' }}>
+          <div className="card-excerpt text-[0.93rem] leading-relaxed line-clamp-5 text-pretty" style={{ color: 'var(--text-2)' }}>
             {highlight(post.excerpt, q)}
           </div>
           <div
-            className="card-meta mt-2.5 flex gap-2 flex-wrap text-[0.72rem] md:text-[0.74rem] items-center"
+            className="card-meta mt-2.5 flex gap-x-2.5 gap-y-1 flex-wrap tabular-nums text-[0.72rem] md:text-[0.74rem] items-center"
             style={{ color: 'var(--text-muted)' }}
           >
             {post.category && post.category !== 'Others' && (

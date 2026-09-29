@@ -35,7 +35,7 @@ const N_OPTIONS = [25, 50, 100];
 
 export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date, total }: FilterBarProps) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   const navigate = (overrides: Partial<{ sort: string; range: string; n: number; q: string; order: string; mode: string; start_date: string; end_date: string }>) => {
     const base: Record<string, string> = { sort, range, n: String(n), q, order, mode };
@@ -64,7 +64,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
     'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]';
 
   return (
-    <div className="rounded-xl p-4 md:p-5 shadow-sm mb-4 md:mb-5" style={{ background: 'var(--surface)' }}>
+    <div className="rounded-xl p-4 md:p-5 shadow-sm mb-4 md:mb-5" style={{ background: 'var(--surface)' }} aria-busy={isPending}>
       {/* Search */}
       <form
         onSubmit={e => {
@@ -235,8 +235,10 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
 
       {/* Results meta + N pills */}
       <div className="flex justify-between items-center flex-wrap gap-2 md:gap-3 mt-2.5 md:mt-3">
-        <p className="text-[0.78rem] md:text-[0.83rem] m-0" style={{ color: 'var(--text-3)' }}>
-          {q ? (
+        <p className="text-[0.78rem] md:text-[0.83rem] m-0 tabular-nums" style={{ color: 'var(--text-3)' }} aria-live="polite">
+          {isPending ? (
+            <span className="pending-dots">Digging through the archive</span>
+          ) : q ? (
             <>
               Results for{' '}
               <strong style={{ color: 'var(--text-1)' }}>&ldquo;{q}&rdquo;</strong>

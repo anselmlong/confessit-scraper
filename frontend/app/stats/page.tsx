@@ -137,7 +137,7 @@ export default async function StatsPage() {
               Engagement follows a <strong>long tail distribution</strong> — most posts score under 50,
               while a tiny fraction of viral content captures the bulk of attention.
             </p>
-            <img src="/blog/score_distribution.png" width={1480} height={730} loading="lazy" decoding="async" alt="Histogram of post scores: most posts score under 50, with a long tail of rare viral posts" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/score_distribution.png" width={1480} height={730} loading="lazy" decoding="async" alt="Histogram of post scores: most posts score under 50, with a long tail of rare viral posts" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="flex flex-wrap gap-4 text-[0.88rem]">
               {['mean','median','p75','p90','max'].map(k => (
                 <div key={k} className="flex flex-col items-center min-w-[80px]">
@@ -157,7 +157,7 @@ export default async function StatsPage() {
               Categories extracted from confession title text — <strong>91% of posts</strong> have a hashtag prefix
               like <code>#studies</code>, <code>#romance</code>, or <code>#campus</code>.
             </p>
-            <img src="/blog/category_breakdown.png" width={1484} height={880} loading="lazy" decoding="async" alt="Bar chart of confession counts by hashtag category" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/category_breakdown.png" width={1484} height={880} loading="lazy" decoding="async" alt="Bar chart of confession counts by hashtag category" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
           </Section>
         )}
 
@@ -179,7 +179,7 @@ export default async function StatsPage() {
               UMAP projection of all 72K confessions — a <strong>continuous gradient</strong> with
               viral posts concentrated in specific regions.
             </p>
-            <img src="/blog/umap_landscape.webp" width={1600} height={724} loading="lazy" decoding="async" alt="UMAP scatter plot of all confessions, coloured by viral status and score intensity" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/umap_landscape.webp" width={1600} height={724} loading="lazy" decoding="async" alt="UMAP scatter plot of all confessions, coloured by viral status and score intensity" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
           </Section>
         )}
 
@@ -273,7 +273,7 @@ export default async function StatsPage() {
                   <span className="text-[0.68rem] w-9 shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     {(c.viral_rate / maxCatViral) <= 0.3 ? `${(c.viral_rate * 100).toFixed(0)}%` : ''}
                   </span>
-                  <span className="hidden sm:inline text-[0.68rem] shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                  <span className="hidden sm:inline w-28 text-right text-[0.68rem] shrink-0 tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     avg {c.avg_score} · n={c.post_count}
                   </span>
                 </div>
@@ -309,10 +309,10 @@ export default async function StatsPage() {
 
         {landscape?.top_posts?.length > 0 && (
           <Section title="Top 10 Most Engaged Posts">
-            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            <div className="divide-y divide-[var(--border)]">
               {landscape.top_posts.map((post: any, i: number) => (
                 <a key={post.id} href={`/post/${post.id}`}
-                   className="flex items-start gap-3 px-1 py-2.5 no-underline transition-colors rounded-lg hover:-translate-y-px"
+                   className="list-row flex items-start gap-3 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <span className="text-[0.7rem] font-black w-5 text-right shrink-0 mt-0.5"
                         style={{ color: i < 3 ? 'var(--orange)' : 'var(--text-muted)' }}>#{i + 1}</span>
@@ -331,7 +331,7 @@ export default async function StatsPage() {
 
         {monthly.length > 0 && (
           <Section title="Monthly Activity">
-            <img src="/blog/monthly_activity.png" width={1780} height={735} loading="lazy" decoding="async" alt="Line chart of confessions posted per month" className="w-full rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
+            <img src="/blog/monthly_activity.png" width={1780} height={735} loading="lazy" decoding="async" alt="Line chart of confessions posted per month" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
             <div className="space-y-2">
               {monthly.map(m => (<MonthlyBar key={m.month} month={m.month} count={m.cnt} max={maxMonthly} />))}
             </div>
@@ -364,7 +364,7 @@ export default async function StatsPage() {
             <div className="space-y-2">
               {copypasta.clusters.map((c: any) => (
                 <a key={c.key} href={`/post/${c.sample_id}`}
-                   className="flex items-start gap-2.5 px-1 py-2.5 no-underline transition-colors rounded-lg hover:-translate-y-px"
+                   className="list-row flex items-start gap-2.5 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
                     <span className="text-base font-black leading-none" style={{ color: 'var(--orange)' }}>{c.count}</span>

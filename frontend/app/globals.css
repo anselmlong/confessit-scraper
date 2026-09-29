@@ -22,6 +22,7 @@
     --on-orange:    #ffffff;
     --mark-bg:      #f5e8c0;
     --nav-bg:       #1a1612;
+    color-scheme: light;
     --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   }
 
@@ -36,7 +37,7 @@
     --text-2:       #9a8e78;
     --text-3:       #8f846f;
     --text-muted:   #857b68;
-    --border:       #1e1c18;
+    --border:       #2a2620;
     --border-light: #141210;
     --blue:         #e2553f;
     --blue-mid:     #b83325;
@@ -47,9 +48,14 @@
     --on-orange:    #0a0806;
     --mark-bg:      #2e2008;
     --nav-bg:       #040402;
+    color-scheme: dark;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scrollbar-color: var(--text-muted) var(--bg);
+  }
 
   body {
     background: var(--bg);
@@ -69,6 +75,11 @@
     color: var(--on-fill);
   }
 
+  input::placeholder { color: var(--text-3); opacity: 1; }
+
+  /* Matplotlib charts are rendered on white; dim them so they don't glare at night */
+  html.dark .chart-img { filter: brightness(0.82) contrast(1.05); }
+
   mark {
     background: var(--mark-bg);
     border-radius: 2px;
@@ -78,7 +89,8 @@
   /* Reading zone (post page prose) */
   .reading-zone p       { margin-bottom: 1.1em; }
   .reading-zone p:last-child { margin-bottom: 0; }
-  .reading-zone ul      { margin: 0.2em 0 1.1em 1.6em; }
+  .reading-zone ul      { margin: 0.2em 0 1.1em 1.6em; list-style: disc; }
+  .reading-zone ul li::marker { color: var(--text-3); }
   .reading-zone ul li   { margin-bottom: 0.4em; }
   .reading-zone hr      { border: none; border-top: 1px solid var(--border); margin: 1.2em 0; }
   .reading-zone code    { background: var(--surface-alt); border-radius: 4px; padding: 1px 6px; font-size: 0.9em; }
@@ -156,6 +168,20 @@
     border-color: var(--blue) !important;
     box-shadow: 0 0 0 3px var(--blue-light);
   }
+
+  /* Filter navigation in flight */
+  .pending-dots::after {
+    content: '…';
+    display: inline-block;
+    animation: pending-pulse 1s ease-in-out infinite;
+  }
+  @keyframes pending-pulse {
+    50% { opacity: 0.2; }
+  }
+
+  /* Stats list rows (top posts, copypasta) */
+  .list-row { transition: background-color 0.15s ease; }
+  .list-row:hover { background: var(--surface-alt); }
 
   /* Reading zone entrance */
   .reading-zone-entry {
