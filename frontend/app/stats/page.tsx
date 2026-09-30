@@ -13,9 +13,9 @@ function fmt(n: number): string {
 
 function OverviewStat({ val, lbl }: { val: string; lbl: string }) {
   return (
-    <div className="rounded-lg p-4 text-center"
+    <div className="rounded-lg p-3 md:p-4 text-center last:max-sm:col-span-2"
          style={{ background: 'var(--surface-alt)' }}>
-      <div className="text-2xl font-black" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>{val}</div>
+      <div className="text-xl md:text-2xl font-black tabular-nums" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>{val}</div>
       <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>{lbl}</div>
     </div>
   );
@@ -121,11 +121,11 @@ export default async function StatsPage() {
         <h1 className="sr-only">NUSConfessIT channel stats</h1>
         {stats && (
           <Section title="Overview">
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 md:gap-3">
               <OverviewStat val={stats.total.toLocaleString()} lbl="Total Posts" />
               <OverviewStat val={fmt(stats.total_views ?? 0)} lbl="Total Views" />
               <OverviewStat val={String(stats.avg_reactions ?? 0)} lbl="Avg Reactions" />
-              <OverviewStat val={String(stats.days_active ?? 0)} lbl="Days Active" />
+              <OverviewStat val={(stats.days_active ?? 0).toLocaleString()} lbl="Days Active" />
               <OverviewStat val={String(stats.avg_words ?? 0)} lbl="Avg Words" />
             </div>
           </Section>
@@ -138,11 +138,11 @@ export default async function StatsPage() {
               while a tiny fraction of viral content captures the bulk of attention.
             </p>
             <img src="/blog/score_distribution.png" width={1480} height={730} loading="lazy" decoding="async" alt="Histogram of post scores: most posts score under 50, with a long tail of rare viral posts" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
-            <div className="flex flex-wrap gap-4 text-[0.88rem]">
+            <div className="grid grid-cols-5 gap-2 max-w-md text-[0.88rem]">
               {['mean','median','p75','p90','max'].map(k => (
-                <div key={k} className="flex flex-col items-center min-w-[80px]">
-                  <span className="text-xl font-black" style={{ color: 'var(--blue)' }}>
-                    {landscape.score_distribution[k as keyof typeof landscape.score_distribution]}
+                <div key={k} className="flex flex-col items-center">
+                  <span className="text-lg md:text-xl font-black tabular-nums" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>
+                    {Number(landscape.score_distribution[k as keyof typeof landscape.score_distribution]).toLocaleString()}
                   </span>
                   <span className="text-[0.7rem] uppercase tracking-wide mt-0.5" style={{ color: 'var(--text-3)' }}>{k}</span>
                 </div>
@@ -367,7 +367,7 @@ export default async function StatsPage() {
                    className="list-row flex items-start gap-2.5 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
-                    <span className="text-base font-black leading-none" style={{ color: 'var(--orange)' }}>{c.count}</span>
+                    <span className="text-base font-black leading-none tabular-nums" style={{ color: 'var(--orange)' }}>{c.count}</span>
                     <span className="text-[0.6rem] uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>posts</span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -379,7 +379,7 @@ export default async function StatsPage() {
                       )}
                     </div>
                     <div className="text-[0.75rem] leading-snug line-clamp-2" style={{ color: 'var(--text-muted)' }}>
-                      "{c.sample_text.slice(0, 150)}{c.sample_text.length > 150 ? '…' : ''}"
+                      &ldquo;{c.sample_text.slice(0, 150)}{c.sample_text.length > 150 ? '…' : ''}&rdquo;
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-[0.68rem]" style={{ color: 'var(--text-3)' }}>
                       <span>avg score <strong style={{ color: 'var(--blue)' }}>{c.avg_score}</strong></span>
