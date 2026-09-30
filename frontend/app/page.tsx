@@ -5,6 +5,7 @@ import { Nav } from '@/components/Nav';
 import { FilterBar } from '@/components/FilterBar';
 import { ConfessionCard } from '@/components/ConfessionCard';
 import { TimeTagline } from '@/components/TimeTagline';
+import { EndOfList } from '@/components/EndOfList';
 import { getPosts, getStats } from '@/lib/api';
 import type { SortKey, RangeKey } from '@/lib/types';
 
@@ -52,7 +53,10 @@ export default async function Home({
                  : `Silence. The archive is holding its breath.`}
             </p>
           ) : (
-            posts.map((p, i) => (<ConfessionCard key={p.id} post={p} rank={i + 1} q={q} />))
+            <>
+              {posts.map((p, i) => (<ConfessionCard key={p.id} post={p} rank={i + 1} q={q} />))}
+              <EndOfList count={posts.length} />
+            </>
           )}
         </div>
       </main>

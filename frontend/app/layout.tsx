@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 
@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: 'Browse, search, and explore confessions from the NUSConfessIT Telegram channel.',
   icons: { icon: '/favicon.svg' },
 };
+
+// Mobile browser chrome blends into the (always dark) nav bar
+export const viewport: Viewport = { themeColor: '#1a1612' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script dangerouslySetInnerHTML={{ __html: `
           console.log('%c confessit ', 'background:#080808;color:#e2553f;font-family:monospace;font-size:13px;padding:2px 6px;border-radius:3px;');
-          console.log('%c scraped from telegram. built out of curiosity. ', 'color:#857b68;font-size:11px;font-family:monospace;');
+          console.log('%c scraped from telegram. built out of curiosity. ', 'color:#8c826e;font-size:11px;font-family:monospace;');
         `}} />
         <ThemeProvider>
           {children}

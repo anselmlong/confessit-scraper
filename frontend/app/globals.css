@@ -36,7 +36,7 @@
     --text-1:       #e8e0ca;
     --text-2:       #9a8e78;
     --text-3:       #8f846f;
-    --text-muted:   #857b68;
+    --text-muted:   #8c826e;
     --border:       #2a2620;
     --border-light: #141210;
     --blue:         #e2553f;
@@ -187,6 +187,49 @@
   }
   @keyframes pending-pulse {
     50% { opacity: 0.2; }
+  }
+
+  /* Filter pill rows: wrap on wide screens, one swipeable line on phones */
+  .pill-scroller { flex-wrap: wrap; }
+  @media (max-width: 767.98px) {
+    .pill-scroller {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      /* Room for focus rings */
+      padding: 3px 0.75rem 3px 3px;
+      margin: -3px 0 -3px -3px;
+    }
+    .pill-scroller::-webkit-scrollbar { display: none; }
+    /* Fade the right edge only while there is more to swipe to */
+    @supports (animation-timeline: scroll()) {
+      .pill-scroller {
+        mask-image: linear-gradient(to right, #000 calc(100% - var(--pill-fade)), transparent);
+        /* Scroll-linked, not motion: survives the reduced-motion reset below */
+        animation: pill-fade linear both !important;
+        animation-timeline: scroll(self inline) !important;
+      }
+    }
+  }
+  @property --pill-fade { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @keyframes pill-fade {
+    from, 85% { --pill-fade: 2rem; }
+    to        { --pill-fade: 0px; }
+  }
+
+  /* End of list: the rules draw in toward the reminder as it scrolls into view */
+  @supports (animation-timeline: view()) {
+    .end-of-list > span {
+      animation: rule-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+    .end-of-list > span:first-child { transform-origin: left; }
+    .end-of-list > span:last-child  { transform-origin: right; }
+  }
+  @keyframes rule-draw {
+    from { transform: scaleX(0); opacity: 0; }
   }
 
   /* Stats list rows (top posts, copypasta) */

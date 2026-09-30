@@ -87,7 +87,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
               type="button"
               onClick={() => mode !== m && navigate({ mode: m })}
               aria-pressed={mode === m}
-              className="px-3 py-2 md:py-2.5 text-[0.75rem] md:text-[0.78rem] font-semibold border-none cursor-pointer transition-colors"
+              className="px-3 py-2 md:py-2.5 pointer-coarse:min-h-11 text-[0.75rem] md:text-[0.78rem] font-semibold border-none cursor-pointer transition-colors"
               style={mode === m
                 ? { background: 'var(--fill)', color: 'var(--on-fill)' }
                 : { background: 'transparent', color: 'var(--text-3)' }}
@@ -103,7 +103,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
           defaultValue={q}
           aria-label={mode === 'semantic' ? 'Describe what you’re looking for' : 'Search confessions'}
           placeholder={mode === 'semantic' ? 'Describe what you’re looking for…' : 'Search confessions…'}
-          className="search-input flex-1 min-w-0 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
+          className="search-input flex-1 min-w-0 px-3 md:px-4 py-2 md:py-2.5 pointer-coarse:min-h-11 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
           style={{
             background: 'var(--surface)',
             color: 'var(--text-1)',
@@ -112,7 +112,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
         />
         <button
           type="submit"
-          className="shrink-0 px-4 md:px-5 py-2 md:py-2.5 rounded-lg font-semibold text-[0.82rem] md:text-[0.88rem] border-none cursor-pointer
+          className="shrink-0 px-4 md:px-5 py-2 md:py-2.5 pointer-coarse:min-h-11 rounded-lg font-semibold text-[0.82rem] md:text-[0.88rem] border-none cursor-pointer
                      transition-transform hover:-translate-y-px active:translate-y-px"
           style={{ background: 'var(--fill)', color: 'var(--on-fill)' }}
         >
@@ -123,7 +123,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             type="button"
             onClick={() => navigate({ q: '' })}
             aria-label="Clear search"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-xs border-[1.5px] shrink-0
+            className="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full flex items-center justify-center text-xs border-[1.5px] shrink-0
                        cursor-pointer transition-colors hover:border-[var(--text-2)] hover:text-[var(--text-1)]"
             style={{
               borderColor: 'var(--border)',
@@ -139,17 +139,17 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
 
       {/* Sort + Direction toggle */}
       <div
-        className="flex gap-4 flex-wrap items-center mt-3.5 pt-3.5 border-t"
+        className="flex gap-x-4 gap-y-2.5 flex-wrap items-center mt-3 md:mt-3.5 pt-3 md:pt-3.5 border-t"
         style={{ borderColor: 'var(--border-light)' }}
       >
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0 max-md:w-full">
           <span
-            className="text-[0.7rem] font-bold uppercase tracking-wide whitespace-nowrap"
+            className="text-[0.7rem] font-bold uppercase tracking-wide whitespace-nowrap shrink-0 max-md:w-10"
             style={{ color: 'var(--text-muted)' }}
           >
             Sort
           </span>
-          <div className="flex gap-1.5 flex-wrap items-center">
+          <div className="pill-scroller flex gap-1.5 items-center">
             {SORTS.map(({ key, label }) => (
               key === 'score' ? (
                 <div key={key} className="relative group">
@@ -164,7 +164,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
                   <div
                     id="score-formula"
                     role="tooltip"
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[0.72rem] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10"
+                    className="max-md:hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-[0.72rem] whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10"
                     style={{ background: 'var(--surface-alt)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
                   >
                     reactions + replies × 2 + forwards × 3
@@ -186,14 +186,14 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
 
         <div className="hidden md:block w-px h-5 shrink-0" aria-hidden="true" style={{ background: 'var(--border)' }} />
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0 max-md:w-full">
           <span
-            className="text-[0.7rem] font-bold uppercase tracking-wide whitespace-nowrap"
+            className="text-[0.7rem] font-bold uppercase tracking-wide whitespace-nowrap shrink-0 max-md:w-10"
             style={{ color: 'var(--text-muted)' }}
           >
             When
           </span>
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="pill-scroller flex gap-1.5 items-center">
             {RANGES.map(({ key, label }) => (
               <button
                 key={key}

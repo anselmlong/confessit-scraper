@@ -39,24 +39,26 @@ export default async function PostPage({ params }: Props) {
 
       <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6">
         <div className="flex gap-3 md:gap-4 flex-wrap items-center mb-4 text-[0.8rem]" style={{ color: 'var(--text-3)' }}>
-          <Link href="/" className="no-underline font-medium hover:opacity-70 transition-opacity" style={{ color: 'var(--text-2)' }}>
+          <Link href="/" className="no-underline font-medium py-2.5 -my-2.5 hover:opacity-70 transition-opacity" style={{ color: 'var(--text-2)' }}>
             ← All Posts
           </Link>
-          <span aria-hidden="true" style={{ color: 'var(--border)' }}>·</span>
+          <span aria-hidden="true" className="max-sm:hidden" style={{ color: 'var(--text-muted)' }}>·</span>
           <time dateTime={post.date || undefined}>{formatConfessionDate(post.date || '')}</time>
           <span><span aria-hidden="true">❤️</span> <strong style={{ color: 'var(--text-2)' }}>{post.reactions_count}</strong><span className="sr-only"> reactions</span></span>
           {post.reply_count > 0 && <span><span aria-hidden="true">💬</span> <strong style={{ color: 'var(--text-2)' }}>{post.reply_count}</strong><span className="sr-only"> replies</span></span>}
           <a href={tgUrl} target="_blank" rel="noopener noreferrer"
-             className="no-underline hover:opacity-70 transition-opacity ml-auto" style={{ color: 'var(--text-muted)' }}>
+             className="no-underline py-2.5 -my-2.5 hover:opacity-70 transition-opacity ml-auto" style={{ color: 'var(--text-muted)' }}>
             Telegram <span aria-hidden="true">↗</span><span className="sr-only">(opens in new tab)</span>
           </a>
         </div>
 
-        {post.title && (
+        {post.title ? (
           <h1 className="text-lg md:text-xl font-bold leading-snug mb-4"
               style={{ color: 'var(--text-1)', fontFamily: 'var(--font-display)' }}>
             {post.title}
           </h1>
+        ) : (
+          <h1 className="sr-only">Confession #{id}</h1>
         )}
 
         <div className="reading-zone reading-zone-entry rounded-xl p-4 md:p-6 shadow-sm mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
