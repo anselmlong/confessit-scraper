@@ -218,6 +218,20 @@
     to        { --pill-fade: 0px; }
   }
 
+  /* End of list: the rules draw in toward the reminder as it scrolls into view */
+  @supports (animation-timeline: view()) {
+    .end-of-list > span {
+      animation: rule-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+    .end-of-list > span:first-child { transform-origin: left; }
+    .end-of-list > span:last-child  { transform-origin: right; }
+  }
+  @keyframes rule-draw {
+    from { transform: scaleX(0); opacity: 0; }
+  }
+
   /* Stats list rows (top posts, copypasta) */
   .list-row { transition: background-color 0.15s ease; }
   .list-row:hover { background: var(--surface-alt); }
