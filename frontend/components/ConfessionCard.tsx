@@ -23,9 +23,9 @@ function highlight(text: string, q: string): React.ReactNode {
 
 export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
   return (
-    <Link href={`/post/${post.id}`} className="no-underline text-inherit block">
+    <Link href={`/post/${post.id}`} className="no-underline text-inherit block mb-2.5 rounded-lg">
       <div
-        className="confession-card border rounded-lg p-4 mb-2.5 flex gap-3.5 items-start cursor-pointer"
+        className="confession-card border rounded-lg p-4 flex gap-3.5 items-start"
         style={{
           borderColor: 'var(--border)',
           background: 'var(--surface)',
