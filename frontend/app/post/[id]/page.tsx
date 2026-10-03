@@ -71,8 +71,10 @@ export default async function PostPage({ params }: Props) {
                 style={{ color: 'var(--text-muted)' }}>
               Discussion ({replies.length})
             </h2>
+            <ol>
             {replies.map((r: any, i: number) => (
-              <ReplyCard key={r.id || -i} reply={{
+              <li key={r.id || -i}>
+              <ReplyCard reply={{
                 id: r.id || -i,
                 date: r.date || '',
                 text: r.body || '',
@@ -83,7 +85,9 @@ export default async function PostPage({ params }: Props) {
                 reactions_down: null,
                 post_id: parseInt(id, 10),
               }} index={i} />
+              </li>
             ))}
+            </ol>
           </section>
         ) : (
           <div className="rounded-xl p-5 shadow-sm text-center" style={{ background: 'var(--surface)' }}>

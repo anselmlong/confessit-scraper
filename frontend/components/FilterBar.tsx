@@ -184,7 +184,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
           </div>
         </div>
 
-        <div className="hidden md:block w-px h-5 shrink-0" aria-hidden="true" style={{ background: 'var(--border)' }} />
+        <div className="hidden lg:block w-px h-5 shrink-0" aria-hidden="true" style={{ background: 'var(--border)' }} />
 
         <div className="flex items-center gap-2 min-w-0 max-md:w-full">
           <span

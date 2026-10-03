@@ -54,7 +54,9 @@ export default async function Home({
             </p>
           ) : (
             <>
-              {posts.map((p, i) => (<ConfessionCard key={p.id} post={p} rank={i + 1} q={q} />))}
+              <ol aria-label={q ? `Results for ${q}` : 'Confessions'}>
+                {posts.map((p, i) => (<li key={p.id}><ConfessionCard post={p} rank={i + 1} q={q} /></li>))}
+              </ol>
               <EndOfList count={posts.length} />
             </>
           )}

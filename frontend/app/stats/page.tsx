@@ -1,5 +1,6 @@
 export const revalidate = 3600; // re-render at most once per hour
 
+import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { getStats, getMonthlyCounts, getLandscape, getInsights, getCopypastas } from '@/lib/api';
 
@@ -311,7 +312,7 @@ export default async function StatsPage() {
           <Section title="Top 10 Most Engaged Posts">
             <div className="divide-y divide-[var(--border)]">
               {landscape.top_posts.map((post: any, i: number) => (
-                <a key={post.id} href={`/post/${post.id}`}
+                <Link key={post.id} href={`/post/${post.id}`}
                    className="list-row flex items-start gap-3 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <span className="text-[0.7rem] font-black w-5 text-right shrink-0 mt-0.5"
@@ -323,7 +324,7 @@ export default async function StatsPage() {
                     </div>
                   </div>
                   <span className="text-[0.7rem] shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>#{post.id}</span>
-                </a>
+                </Link>
               ))}
             </div>
           </Section>
@@ -363,7 +364,7 @@ export default async function StatsPage() {
             </div>
             <div className="space-y-2">
               {copypasta.clusters.map((c: any) => (
-                <a key={c.key} href={`/post/${c.sample_id}`}
+                <Link key={c.key} href={`/post/${c.sample_id}`}
                    className="list-row flex items-start gap-2.5 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
@@ -371,7 +372,7 @@ export default async function StatsPage() {
                     <span className="text-[0.6rem] uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>posts</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-0.5">
                       <span className="font-semibold text-[0.82rem]">{c.name}</span>
                       {c.is_trending && (
                         <span className="text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm"
@@ -381,14 +382,14 @@ export default async function StatsPage() {
                     <div className="text-[0.75rem] leading-snug line-clamp-2" style={{ color: 'var(--text-muted)' }}>
                       &ldquo;{c.sample_text.slice(0, 150)}{c.sample_text.length > 150 ? '…' : ''}&rdquo;
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-[0.68rem]" style={{ color: 'var(--text-3)' }}>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[0.68rem] tabular-nums whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
                       <span>avg score <strong style={{ color: 'var(--blue)' }}>{c.avg_score}</strong></span>
                       <span>avg reactions <strong style={{ color: 'var(--blue)' }}>{c.avg_reactions}</strong></span>
                       <span>{c.trend_30d} in last 30d</span>
                     </div>
                   </div>
                   <span className="text-[0.65rem] shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>#{c.sample_id}</span>
-                </a>
+                </Link>
               ))}
             </div>
           </Section>
