@@ -18,3 +18,16 @@ export function formatConfessionDate(iso: string): string {
     return iso.slice(0, 16);
   }
 }
+
+// "2:47am" if the confession was sent between midnight and 5am SGT, else null
+export function smallHoursTime(iso: string): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const h = Number(d.toLocaleString('en-SG', { timeZone: SGT, hour: 'numeric', hourCycle: 'h23' }));
+  if (h >= 5) return null;
+  return d
+    .toLocaleTimeString('en-SG', { timeZone: SGT, hour: 'numeric', minute: '2-digit', hour12: true })
+    .replace(/\s/g, '')
+    .toLowerCase();
+}

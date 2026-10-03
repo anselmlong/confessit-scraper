@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { ReplyCard } from '@/components/ReplyCard';
 import { getPost } from '@/lib/api';
-import { formatConfessionDate } from '@/lib/date';
+import { formatConfessionDate, smallHoursTime } from '@/lib/date';
 import { tgMdToHtml } from '@/lib/markdown';
 
 interface Props {
@@ -32,6 +32,7 @@ export default async function PostPage({ params }: Props) {
   const { post, replies, total } = data;
   const tgUrl = `https://t.me/NUSConfessIT/${id}`;
   const html = tgMdToHtml(post.content ?? '');
+  const lateNight = smallHoursTime(post.date || '');
 
   return (
     <>
@@ -64,6 +65,13 @@ export default async function PostPage({ params }: Props) {
         <div className="reading-zone reading-zone-entry rounded-xl p-4 md:p-6 shadow-sm mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
              style={{ background: 'var(--surface)', color: 'var(--text-1)' }}
              dangerouslySetInnerHTML={{ __html: html }} />
+
+        {/* Confessions sent in the small hours sign off with the hour, like a note left on the desk */}
+        {lateNight && (
+          <p className="late-night -mt-3 md:-mt-5 mb-5 md:mb-7 pr-1 text-right text-[0.8rem] italic" style={{ color: 'var(--text-3)' }}>
+            &mdash; written at {lateNight}, while the rest of campus slept
+          </p>
+        )}
 
         {replies.length > 0 ? (
           <section>

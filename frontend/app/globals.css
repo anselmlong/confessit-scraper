@@ -233,6 +233,11 @@
   .list-row { transition: background-color 0.15s ease; }
   .list-row:hover { background: var(--surface-alt); }
 
+  /* Small-hours sign-off: surfaces just after the confession settles */
+  .late-night {
+    animation: reading-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+  }
+
   /* Reading zone entrance */
   .reading-zone-entry {
     animation: reading-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both 0.08s;
