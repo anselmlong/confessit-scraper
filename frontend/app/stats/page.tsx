@@ -24,7 +24,7 @@ function OverviewStat({ val, lbl }: { val: string; lbl: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl p-5 shadow-sm mb-5" style={{ background: 'var(--surface)' }}>
+    <section className="rounded-xl p-4 md:p-5 shadow-sm mb-4 md:mb-5" style={{ background: 'var(--surface)' }}>
       <h2 className="text-[0.72rem] font-semibold uppercase tracking-widest mb-4"
           style={{ color: 'var(--text-muted)' }}>
         {title}
@@ -369,13 +369,13 @@ export default async function StatsPage() {
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
                     <span className="text-base font-black leading-none tabular-nums" style={{ color: 'var(--orange)' }}>{c.count}</span>
-                    <span className="text-[0.6rem] uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>posts</span>
+                    <span className="text-[0.65rem] uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>posts</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-0.5">
                       <span className="font-semibold text-[0.82rem]">{c.name}</span>
                       {c.is_trending && (
-                        <span className="text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm"
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-sm"
                               style={{ background: 'var(--orange)', color: 'var(--on-orange)' }}>Trending</span>
                       )}
                     </div>

@@ -7,6 +7,11 @@ export function ThemeToggle() {
   const { resolvedTheme: theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // Keep mobile browser chrome matched to the nav in either theme
+  useEffect(() => {
+    if (!theme) return;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#040402' : '#1a1612');
+  }, [theme]);
 
   if (!mounted) return <div className="w-10 h-10" />;
 

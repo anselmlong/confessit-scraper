@@ -6,7 +6,7 @@ export default function NotFound() {
     <>
       <Nav />
       <main className="max-w-5xl mx-auto px-4 pt-24 pb-16 text-center">
-        <h1 className="text-6xl font-black mb-4" style={{ color: 'var(--blue)' }}>
+        <h1 className="text-6xl font-black mb-4 tabular-nums" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>
           404
         </h1>
         <p className="text-lg mb-8" style={{ color: 'var(--text-2)' }}>
@@ -14,7 +14,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="no-underline font-semibold px-6 py-3 rounded-xl
+          className="no-underline font-semibold px-6 py-3 rounded-lg
                      transition-transform hover:-translate-y-0.5 inline-block"
           style={{ background: 'var(--fill)', color: 'var(--on-fill)' }}
         >
