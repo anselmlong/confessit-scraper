@@ -258,7 +258,8 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
               <strong style={{ color: 'var(--text-1)' }}>{n}</strong>
               {total != null && <> of <strong style={{ color: 'var(--text-1)' }}>{total.toLocaleString()}</strong></>}
               {range !== 'custom' && (
-                <> &middot; sorted by <strong style={{ color: 'var(--orange)' }}>{order === 'desc' ? '↓' : '↑'} {sort}</strong></>
+                // Phones: the active Sort pill already says this; dropping it keeps 25/50/100 on the same line
+                <span className="max-md:hidden"> &middot; sorted by <strong style={{ color: 'var(--orange)' }}>{order === 'desc' ? '↓' : '↑'} {sort}</strong></span>
               )}
             </>
           )}
