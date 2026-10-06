@@ -52,6 +52,13 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
     startTransition(() => router.push(`/?${p}`));
   };
 
+  // Typing a date fires change on every digit (year 0002, 0020…); only navigate once it's a real date
+  const commitDate = (field: 'start_date' | 'end_date', value: string, current: string) => {
+    if (value === current) return;
+    if (value && !(/^\d{4}-\d{2}-\d{2}$/.test(value) && +value.slice(0, 4) >= 2000)) return;
+    navigate({ [field]: value, range: 'custom' });
+  };
+
   const toggleOrder = () => {
     navigate({ order: order === 'desc' ? 'asc' : 'desc' });
   };
@@ -215,7 +222,8 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             key={`sd-${start_date}`}
             type="date"
             defaultValue={start_date}
-            onChange={e => navigate({ start_date: e.target.value, range: 'custom' })}
+            onChange={e => commitDate('start_date', e.target.value, start_date)}
+            onBlur={e => commitDate('start_date', e.target.value, start_date)}
             aria-label="From date"
             className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border-[1.5px] font-[inherit]"
             style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
@@ -225,7 +233,8 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             key={`ed-${end_date}`}
             type="date"
             defaultValue={end_date}
-            onChange={e => navigate({ end_date: e.target.value, range: 'custom' })}
+            onChange={e => commitDate('end_date', e.target.value, end_date)}
+            onBlur={e => commitDate('end_date', e.target.value, end_date)}
             aria-label="To date"
             className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border-[1.5px] font-[inherit]"
             style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
