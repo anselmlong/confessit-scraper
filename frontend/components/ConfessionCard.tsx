@@ -23,7 +23,7 @@ function highlight(text: string, q: string): React.ReactNode {
 
 export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
   return (
-    <Link href={`/post/${post.id}`} className="no-underline text-inherit block mb-2.5 rounded-lg">
+    <Link href={`/post/${post.id}`} className="confession-link no-underline text-inherit block mb-2.5 rounded-lg">
       <div
         className="confession-card border rounded-lg p-3.5 md:p-4 flex gap-3 md:gap-3.5 items-start"
         style={{
@@ -36,8 +36,8 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
         {/* Rank badge */}
         <div
           aria-hidden="true"
-          className="card-rank shrink-0 w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center font-black text-[0.78rem] md:text-[0.9rem] tabular-nums"
-          style={{ background: 'var(--surface-mid)', color: 'var(--text-3)' }}
+          className="card-rank shrink-0 w-7 h-7 md:w-9 md:h-9 rounded-full border flex items-center justify-center font-black text-[0.78rem] md:text-[0.9rem] tabular-nums"
+          style={{ color: 'var(--text-3)' }}
         >
           {rank}
         </div>
@@ -45,10 +45,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
         {/* Body */}
         <div className="flex-1 min-w-0">
           {post.title && (
-            <div
-              className="font-bold text-[1rem] mb-1.5 leading-snug text-balance"
-              style={{ color: 'var(--blue)' }}
-            >
+            <div className="card-title font-bold text-[1rem] mb-1.5 leading-snug text-balance">
               {highlight(post.title, q)}
             </div>
           )}
