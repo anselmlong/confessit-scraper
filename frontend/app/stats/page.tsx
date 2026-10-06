@@ -1,5 +1,6 @@
 export const revalidate = 3600; // re-render at most once per hour
 
+import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { getStats, getMonthlyCounts, getLandscape, getInsights, getCopypastas } from '@/lib/api';
 
@@ -311,7 +312,7 @@ export default async function StatsPage() {
           <Section title="Top 10 Most Engaged Posts">
             <div className="divide-y divide-[var(--border)]">
               {landscape.top_posts.map((post: any, i: number) => (
-                <a key={post.id} href={`/post/${post.id}`}
+                <Link key={post.id} href={`/post/${post.id}`}
                    className="list-row flex items-start gap-3 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <span className="text-[0.7rem] font-black w-5 text-right shrink-0 mt-0.5"
@@ -323,7 +324,7 @@ export default async function StatsPage() {
                     </div>
                   </div>
                   <span className="text-[0.7rem] shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>#{post.id}</span>
-                </a>
+                </Link>
               ))}
             </div>
           </Section>
@@ -363,7 +364,7 @@ export default async function StatsPage() {
             </div>
             <div className="space-y-2">
               {copypasta.clusters.map((c: any) => (
-                <a key={c.key} href={`/post/${c.sample_id}`}
+                <Link key={c.key} href={`/post/${c.sample_id}`}
                    className="list-row flex items-start gap-2.5 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
@@ -388,7 +389,7 @@ export default async function StatsPage() {
                     </div>
                   </div>
                   <span className="text-[0.65rem] shrink-0 mt-0.5" style={{ color: 'var(--text-muted)' }}>#{c.sample_id}</span>
-                </a>
+                </Link>
               ))}
             </div>
           </Section>

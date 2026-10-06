@@ -33,20 +33,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             NUSConfessIT Dashboard &middot; Data from{' '}
             <a
               href="https://t.me/NUSConfessIT"
-              className="inline-block px-1 py-2"
+              className="inline-block px-1 py-2 pointer-coarse:py-3.5"
               style={{ color: 'var(--blue)' }}
             >
               t.me/NUSConfessIT
             </a>
             {' '}&middot;{' '}
-            <a href="/launch.mp4" className="inline-block px-1 py-2" style={{ color: 'var(--blue)' }}>
+            <a href="/launch.mp4" className="inline-block px-1 py-2 pointer-coarse:py-3.5" style={{ color: 'var(--blue)' }}>
               20-second tour
             </a>
             <br />
             Content is mirrored from a public Telegram channel. For removal requests, contact{' '}
             <a
               href="mailto:anselmpius@gmail.com"
-              className="inline-block px-1 py-2"
+              className="inline-block px-1 py-2 pointer-coarse:py-3.5"
               style={{ color: 'var(--blue)' }}
             >
               anselmpius@gmail.com

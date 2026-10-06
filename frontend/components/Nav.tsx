@@ -22,7 +22,7 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
         aria-current={activePage === 'home' ? 'page' : undefined}
         className={`text-[0.8rem] md:text-[0.88rem] font-medium px-2 md:px-4 py-[10px] md:py-[14px] no-underline transition-colors
           ${activePage === 'home'
-            ? 'text-white border-b-[3px] border-[var(--blue)]'
+            ? 'text-white shadow-[inset_0_-3px_0_var(--blue)]'
             : 'text-white/75 hover:text-white'}`}
       >
         Overview
@@ -33,7 +33,7 @@ export function Nav({ activePage = '' }: { activePage?: string }) {
         aria-current={activePage === 'stats' ? 'page' : undefined}
         className={`text-[0.8rem] md:text-[0.88rem] font-medium px-2 md:px-4 py-[10px] md:py-[14px] no-underline transition-colors
           ${activePage === 'stats'
-            ? 'text-white border-b-[3px] border-[var(--blue)]'
+            ? 'text-white shadow-[inset_0_-3px_0_var(--blue)]'
             : 'text-white/75 hover:text-white'}`}
       >
         Stats

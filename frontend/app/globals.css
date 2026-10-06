@@ -159,6 +159,13 @@
     opacity: 0.4;
     transform: scale(0.88);
   }
+  /* Colours live here, not inline, so :visited can reach them */
+  .card-rank  { background-color: var(--surface-mid); border-color: var(--surface-mid); }
+  .card-title { color: var(--blue); }
+  /* Read it already? Like a visited thread on an old forum: the title
+     loses its red and the rank empties to a ring. Unread stays loud. */
+  .confession-link:visited .card-title { color: var(--text-3); }
+  .confession-link:visited .card-rank  { background-color: var(--surface); border-color: var(--border); }
   .card-excerpt {
     transition: color 0.18s ease;
   }
