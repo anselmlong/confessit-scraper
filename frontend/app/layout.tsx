@@ -42,6 +42,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/launch.mp4" className="inline-block px-1 py-2 pointer-coarse:py-3.5" style={{ color: 'var(--blue)' }}>
               20-second tour
             </a>
+            {' '}&middot;{' '}
+            <a
+              href="https://ko-fi.com/anselmlong"
+              target="_blank"
+              rel="noopener"
+              className="inline-block px-1 py-2 pointer-coarse:py-3.5"
+              style={{ color: 'var(--blue)' }}
+            >
+              &#9749; support me on Ko-fi
+            </a>
             <br />
             Content is mirrored from a public Telegram channel. For removal requests, contact{' '}
             <a
