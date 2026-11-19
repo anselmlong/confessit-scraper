@@ -95,7 +95,7 @@ export function ShareRows({ rows, months, linkTerms = false, emptyNote }: {
                         onMouseEnter={() => setHover(i)} className={linkTerms ? 'cursor-pointer' : undefined} />
                 );
                 return linkTerms ? (
-                  <Link key={m} href={`/?q=${encodeURIComponent(r.label)}&range=custom&start_date=${m}-01&end_date=${monthEnd(m)}&sort=score&n=100`}
+                  <Link key={m} prefetch={false} href={`/?q=${encodeURIComponent(r.label)}&range=custom&start_date=${m}-01&end_date=${monthEnd(m)}&sort=score&n=100`}
                         aria-label={`Read posts mentioning ${r.label} in ${fmtDay(m, { month: 'long', year: 'numeric' })}`}>
                     {rect}
                   </Link>

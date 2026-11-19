@@ -301,8 +301,8 @@ function BucketDetail({ b, kind }: { b: TimelineBucket; kind: Timeline['bucket']
       ) : (
         <>
           <div className="mt-2">{b.top.map((p, i) => <PostLine key={p.id} p={p} rank={i + 1} />)}</div>
-          <Link href={feedHref(b.start, b.end)} className="inline-flex items-center gap-1 mt-2 text-[0.82rem] font-medium no-underline hover:underline underline-offset-4" style={{ color: 'var(--blue)' }}>
-            Browse all {b.count.toLocaleString()} posts from {kind === 'day' ? 'this day' : 'this week'} <span aria-hidden="true">→</span>
+          <Link href={feedHref(b.start, b.end)} prefetch={false} className="inline-flex items-center gap-1 mt-2 text-[0.82rem] font-medium no-underline hover:underline underline-offset-4" style={{ color: 'var(--blue)' }}>
+            Top {Math.min(b.count, 100)} posts from {kind === 'day' ? 'this day' : 'this week'} in the feed <span aria-hidden="true">→</span>
           </Link>
         </>
       )}

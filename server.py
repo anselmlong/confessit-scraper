@@ -123,6 +123,20 @@ def _connect():
     return conn
 
 
+def _sgt_range_sql(start_date, end_date, params) -> str:
+    """Filter on whole Singapore-time days. Dates are stored as UTC ISO strings,
+    so an SGT day runs from 16:00 UTC the day before to 16:00 UTC that day."""
+    sql = ""
+    if start_date:
+        d = datetime.fromisoformat(start_date[:10]).date() - timedelta(days=1)
+        sql += " AND date >= ?"
+        params.append(f"{d.isoformat()}T16:00:00")
+    if end_date:
+        sql += " AND date < ?"
+        params.append(f"{end_date[:10]}T16:00:00")
+    return sql
+
+
 def _score_expr():
     return "(reactions_count + reply_count * 2 + forwards * 3)"
 
@@ -154,12 +168,7 @@ def get_posts(days=None, limit=25, sort="reactions", q=None, order="desc", start
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         sql += " AND date >= ?"
         params.append(since)
-    if start_date:
-        sql += " AND date >= ?"
-        params.append(start_date)
-    if end_date:
-        sql += " AND date <= ?"
-        params.append(end_date + "T23:59:59")
+    sql += _sgt_range_sql(start_date, end_date, params)
     if q:
         like = f"%{q}%"
         sql += " AND (text LIKE ? OR title LIKE ? OR content LIKE ?)"
@@ -196,12 +205,7 @@ def get_posts_semantic(q, limit=25, days=None, start_date=None, end_date=None):
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         sql += " AND date >= ?"
         params.append(since)
-    if start_date:
-        sql += " AND date >= ?"
-        params.append(start_date)
-    if end_date:
-        sql += " AND date <= ?"
-        params.append(end_date + "T23:59:59")
+    sql += _sgt_range_sql(start_date, end_date, params)
     rows = conn.execute(sql, params).fetchall()
     conn.close()
 
