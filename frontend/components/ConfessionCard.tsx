@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Post } from '@/lib/types';
 import { formatConfessionDate } from '@/lib/date';
+import { HeartIcon, ReplyIcon } from './Icons';
 
 interface ConfessionCardProps {
   post: Post;
@@ -23,9 +24,9 @@ function highlight(text: string, q: string): React.ReactNode {
 
 export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
   return (
-    <Link href={`/post/${post.id}`} className="confession-link no-underline text-inherit block mb-2.5 rounded-lg">
+    <Link href={`/post/${post.id}`} className="confession-link no-underline text-inherit block mb-2.5 rounded-xl">
       <div
-        className="confession-card border rounded-lg p-3.5 md:p-4 flex gap-3 md:gap-3.5 items-start"
+        className="confession-card border rounded-xl p-4 md:p-5 flex gap-3 md:gap-4 items-start"
         style={{
           borderColor: 'var(--border)',
           background: 'var(--surface)',
@@ -33,11 +34,10 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
           animationDelay: `${Math.min(rank - 1, 5) * 55}ms`,
         }}
       >
-        {/* Rank badge */}
         <div
           aria-hidden="true"
-          className="card-rank shrink-0 w-7 h-7 md:w-9 md:h-9 rounded-full border flex items-center justify-center font-black text-[0.78rem] md:text-[0.9rem] tabular-nums"
-          style={{ color: 'var(--text-3)' }}
+          className="card-rank shrink-0 w-6 md:w-7 pt-0.5 text-right text-[0.78rem] tabular-nums transition-colors"
+          style={{ fontFamily: 'var(--font-mono)' }}
         >
           {rank}
         </div>
@@ -45,7 +45,7 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
         {/* Body */}
         <div className="flex-1 min-w-0">
           {post.title && (
-            <div className="card-title font-bold text-[1rem] mb-1.5 leading-snug text-balance">
+            <div className="card-title font-semibold text-[1rem] tracking-[-0.01em] mb-1.5 leading-snug text-balance">
               {highlight(post.title, q)}
             </div>
           )}
@@ -53,20 +53,20 @@ export function ConfessionCard({ post, rank, q = '' }: ConfessionCardProps) {
             {highlight(post.excerpt, q)}
           </div>
           <div
-            className="card-meta mt-2.5 flex gap-x-2.5 gap-y-1 flex-wrap tabular-nums text-[0.72rem] md:text-[0.74rem] items-center"
+            className="card-meta mt-3 flex gap-x-3.5 gap-y-1 flex-wrap tabular-nums text-[0.72rem] md:text-[0.74rem] items-center"
             style={{ color: 'var(--text-muted)' }}
           >
             {post.category && post.category !== 'Others' && (
               <span
-                className="text-[0.7rem] md:text-[0.72rem] font-semibold px-1.5 md:px-2 py-0.5 rounded-xl uppercase tracking-wide"
-                style={{ background: 'var(--blue-light)', color: 'var(--blue)' }}
+                className="text-[0.7rem] md:text-[0.72rem] font-medium px-2 py-0.5 rounded-md border"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-2)', background: 'var(--surface-alt)' }}
               >
                 {post.category}
               </span>
             )}
-            <span><span aria-hidden="true">❤️</span> {post.reactions_count}<span className="sr-only"> reactions</span></span>
+            <span className="inline-flex items-center gap-1"><HeartIcon /> {post.reactions_count}<span className="sr-only"> reactions</span></span>
             {post.reply_count > 0 && (
-              <span><span aria-hidden="true">💬</span> {post.reply_count}<span className="sr-only"> replies</span></span>
+              <span className="inline-flex items-center gap-1"><ReplyIcon /> {post.reply_count}<span className="sr-only"> replies</span></span>
             )}
             <time dateTime={post.date ?? undefined}>{formatConfessionDate(post.date ?? '')}</time>
           </div>

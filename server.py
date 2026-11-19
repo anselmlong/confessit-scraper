@@ -23,6 +23,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 import time as _time
 _cache: dict = {}
 _CACHE_TTL = 3600  # 1 hour
+_CACHE_MAX_ENTRIES = 64  # bound memory so a long uptime can't grow the dict unbounded
 
 
 def _cached(key: str, fn):
@@ -32,6 +33,10 @@ def _cached(key: str, fn):
         return entry["data"]
     result = fn()
     _cache[key] = {"data": result, "ts": _time.monotonic()}
+    # LRU-ish bound: if over the cap, drop the oldest entries until back under.
+    if len(_cache) > _CACHE_MAX_ENTRIES:
+        for old_key in sorted(_cache, key=lambda k: _cache[k]["ts"])[: len(_cache) - _CACHE_MAX_ENTRIES]:
+            _cache.pop(old_key, None)
     return result
 
 
@@ -118,6 +123,20 @@ def _connect():
     return conn
 
 
+def _sgt_range_sql(start_date, end_date, params) -> str:
+    """Filter on whole Singapore-time days. Dates are stored as UTC ISO strings,
+    so an SGT day runs from 16:00 UTC the day before to 16:00 UTC that day."""
+    sql = ""
+    if start_date:
+        d = datetime.fromisoformat(start_date[:10]).date() - timedelta(days=1)
+        sql += " AND date >= ?"
+        params.append(f"{d.isoformat()}T16:00:00")
+    if end_date:
+        sql += " AND date < ?"
+        params.append(f"{end_date[:10]}T16:00:00")
+    return sql
+
+
 def _score_expr():
     return "(reactions_count + reply_count * 2 + forwards * 3)"
 
@@ -149,12 +168,7 @@ def get_posts(days=None, limit=25, sort="reactions", q=None, order="desc", start
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         sql += " AND date >= ?"
         params.append(since)
-    if start_date:
-        sql += " AND date >= ?"
-        params.append(start_date)
-    if end_date:
-        sql += " AND date <= ?"
-        params.append(end_date + "T23:59:59")
+    sql += _sgt_range_sql(start_date, end_date, params)
     if q:
         like = f"%{q}%"
         sql += " AND (text LIKE ? OR title LIKE ? OR content LIKE ?)"
@@ -191,12 +205,7 @@ def get_posts_semantic(q, limit=25, days=None, start_date=None, end_date=None):
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         sql += " AND date >= ?"
         params.append(since)
-    if start_date:
-        sql += " AND date >= ?"
-        params.append(start_date)
-    if end_date:
-        sql += " AND date <= ?"
-        params.append(end_date + "T23:59:59")
+    sql += _sgt_range_sql(start_date, end_date, params)
     rows = conn.execute(sql, params).fetchall()
     conn.close()
 
@@ -887,6 +896,214 @@ def _compute_copypasta():
 @app.route("/api/copypasta")
 def api_copypasta():
     return jsonify(_cached("copypasta", _compute_copypasta))
+
+
+# ── Trends over time ──────────────────────────────────────────────
+#
+# Dates are stored in UTC; the channel lives in Singapore, so every bucket is
+# computed on SGT (+8h) or a 1am post lands on the wrong day.
+
+_SGT = "'+8 hours'"
+_SPANS = {"30d": (30, "day"), "90d": (90, "day"), "1y": (365, "week"), "all": (None, "week")}
+# Reactions are refreshed weekly, so posts younger than this are still collecting them.
+_PROVISIONAL_DAYS = 14
+_CATEGORIES = ["Studies", "Romance", "Campus", "Rant", "Whistleblow", "Others"]
+# Raw posts (no parsed `content`) still carry the channel's header block.
+_HEADER_LINE = re.compile(r"^\W*(Category|ID|Message)\W*:.*$", re.MULTILINE | re.IGNORECASE)
+
+
+def _body_excerpt(body: str, max_chars: int = 180) -> str:
+    return _excerpt(_HEADER_LINE.sub("", body), max_chars)
+
+
+def _bucket_expr(bucket: str) -> str:
+    if bucket == "week":
+        return f"date(date, {_SGT}, '-6 days', 'weekday 1')"  # Monday of that SGT week
+    if bucket == "month":
+        return f"strftime('%Y-%m', date, {_SGT})"
+    return f"date(date, {_SGT})"
+
+
+def _bucket_end(start: str, bucket: str) -> str:
+    d = datetime.fromisoformat(start).date()
+    return (d + timedelta(days=6 if bucket == "week" else 0)).isoformat()
+
+
+def _norm_category(raw) -> str:
+    for c in _CATEGORIES:
+        if raw and raw.startswith(c):
+            return c
+    return "Others"
+
+
+def _find_moments(series, posts_by_id, limit=8):
+    """Volume spikes (vs the median of the prior 8 buckets) plus the span's biggest posts."""
+    counts = [b["count"] for b in series]
+    spikes = []
+    for i, b in enumerate(series):
+        prior = sorted(counts[max(0, i - 8):i])
+        if len(prior) < 4:
+            continue
+        median = prior[len(prior) // 2] or 1
+        ratio = b["count"] / median
+        if ratio >= 1.3 and b["count"] >= 15 and not b["partial"]:
+            spikes.append((ratio, i))
+    spikes.sort(reverse=True)
+    taken, moments = set(), []
+    for ratio, i in spikes:
+        if len(moments) >= 3:
+            break
+        if any(abs(i - j) <= 1 for j in taken):
+            continue
+        taken.add(i)
+        b = series[i]
+        moments.append({"kind": "spike", "start": b["start"], "end": b["end"],
+                        "ratio": round(ratio, 1), "count": b["count"],
+                        "post": b["top"][0] if b["top"] else None})
+
+    for p in sorted(posts_by_id.values(), key=lambda p: p["score"], reverse=True):
+        if len(moments) >= limit:
+            break
+        if any(m["post"] and m["post"]["id"] == p["id"] for m in moments):
+            continue
+        moments.append({"kind": "viral", "start": p["day"], "end": p["day"],
+                        "count": None, "ratio": None, "post": p})
+    moments.sort(key=lambda m: m["start"], reverse=True)
+    return moments
+
+
+def _compute_timeline(span: str):
+    days, bucket = _SPANS[span]
+    conn = _connect()
+    where, params = "is_reply=0 AND date IS NOT NULL", []
+    if days:
+        where += " AND date >= ?"
+        params.append((datetime.now(timezone.utc) - timedelta(days=days)).isoformat())
+    rows = conn.execute(f"""
+        SELECT id, date(date, {_SGT}) AS day, {_bucket_expr(bucket)} AS b,
+               {_score_expr()} AS score, reactions_count, reply_count,
+               COALESCE(content, text, '') AS body
+        FROM messages WHERE {where}
+    """, params).fetchall()
+    conn.close()
+
+    now_sgt = (datetime.now(timezone.utc) + timedelta(hours=8)).date()
+    provisional_from = (now_sgt - timedelta(days=_PROVISIONAL_DAYS)).isoformat()
+    today = now_sgt.isoformat()
+
+    buckets: dict = {}
+    for r in rows:
+        b = buckets.setdefault(r["b"], {"count": 0, "score_sum": 0, "posts": []})
+        b["count"] += 1
+        b["score_sum"] += r["score"]
+        b["posts"].append(r)
+
+    by_start, top_posts = {}, {}
+    for start, b in buckets.items():
+        best = sorted(b["posts"], key=lambda r: r["score"], reverse=True)[:3]
+        top = [{"id": r["id"], "day": r["day"], "score": r["score"],
+                "reactions": r["reactions_count"], "replies": r["reply_count"],
+                "excerpt": _body_excerpt(r["body"])} for r in best]
+        for p in top:
+            top_posts[p["id"]] = p
+        end = _bucket_end(start, bucket)
+        by_start[start] = {"start": start, "end": end, "count": b["count"],
+                           "avg_score": round(b["score_sum"] / b["count"], 1),
+                           "provisional": end >= provisional_from,
+                           "partial": end > today, "top": top}
+
+    # Fill empty buckets so the x-axis is continuous.
+    series = []
+    if by_start:
+        step = timedelta(days=7 if bucket == "week" else 1)
+        d = datetime.fromisoformat(min(by_start)).date()
+        last = datetime.fromisoformat(max(by_start)).date()
+        while d <= last:
+            k = d.isoformat()
+            series.append(by_start.get(k) or {"start": k, "end": _bucket_end(k, bucket), "count": 0,
+                                              "avg_score": 0, "provisional": False,
+                                              "partial": False, "top": []})
+            d += step
+
+    return {"span": span, "bucket": bucket, "provisional_from": provisional_from,
+            "series": series, "moments": _find_moments(series, top_posts)}
+
+
+@app.route("/api/timeline")
+def api_timeline():
+    span = request.args.get("span", "all")
+    if span not in _SPANS:
+        span = "all"
+    return jsonify(_cached(f"timeline:{span}", lambda: _compute_timeline(span)))
+
+
+def _compute_terms(terms: tuple):
+    """Share of posts per SGT month that mention each term as a whole word."""
+    conn = _connect()
+    month = _bucket_expr("month")
+    totals = dict(conn.execute(f"""
+        SELECT {month} AS m, COUNT(*) FROM messages
+        WHERE is_reply=0 AND date IS NOT NULL GROUP BY m ORDER BY m
+    """).fetchall())
+    out = []
+    for term in terms:
+        rx = re.compile(rf"(?<!\w){re.escape(term)}(?!\w)", re.IGNORECASE)
+        hits: dict = {}
+        for r in conn.execute(f"""
+            SELECT {month} AS m, COALESCE(content, text, '') AS body
+            FROM messages WHERE is_reply=0 AND date IS NOT NULL
+              AND (text LIKE ? OR content LIKE ?)
+        """, (f"%{term}%", f"%{term}%")):
+            if rx.search(r["body"]):
+                hits[r["m"]] = hits.get(r["m"], 0) + 1
+        series = [{"month": m, "count": hits.get(m, 0), "total": t,
+                   "share": round(hits.get(m, 0) / t * 100, 2) if t else 0}
+                  for m, t in totals.items()]
+        peak = None
+        if hits:
+            # Thin months (the first, partial one) would win on share alone.
+            pm = max((s for s in series if s["total"] >= 200), key=lambda s: s["share"], default=series[-1])
+            peak = {"month": pm["month"], "share": pm["share"], "count": pm["count"]}
+        out.append({"term": term, "total": sum(hits.values()), "peak": peak, "series": series})
+    conn.close()
+    return {"terms": out}
+
+
+@app.route("/api/terms")
+def api_terms():
+    raw = request.args.get("terms", "")
+    terms = tuple(dict.fromkeys(t.strip().lower()[:40] for t in raw.split(",") if t.strip()))[:4]
+    if not terms:
+        return jsonify({"terms": []})
+    return jsonify(_cached("terms:" + ",".join(terms), lambda: _compute_terms(terms)))
+
+
+def _compute_categories():
+    conn = _connect()
+    rows = conn.execute(f"""
+        SELECT {_bucket_expr('month')} AS m, category, COUNT(*) AS n
+        FROM messages WHERE is_reply=0 AND date IS NOT NULL GROUP BY m, category
+    """).fetchall()
+    conn.close()
+    months: dict = {}
+    for r in rows:
+        mm = months.setdefault(r["m"], {c: 0 for c in _CATEGORIES})
+        mm[_norm_category(r["category"])] += r["n"]
+    ordered = sorted(months)
+    series = []
+    for c in _CATEGORIES:
+        pts = []
+        for m in ordered:
+            total = sum(months[m].values())
+            pts.append({"month": m, "count": months[m][c],
+                        "share": round(months[m][c] / total * 100, 1) if total else 0})
+        series.append({"category": c, "total": sum(p["count"] for p in pts), "series": pts})
+    return {"months": ordered, "categories": series}
+
+
+@app.route("/api/categories")
+def api_categories():
+    return jsonify(_cached("categories", _compute_categories))
 
 
 if __name__ == "__main__":

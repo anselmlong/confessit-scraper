@@ -4,22 +4,22 @@
 NUS students browsing anonymously submitted confessions — on their phone between classes, late at night in their hall room, or slouched in a kopitiam. Also the creator, using it as a personal data tool to explore sentiment trends and channel analytics. Both audiences want to find interesting content fast; neither wants friction.
 
 ### Brand Personality
-Raw, confessional, a-little-wrong. This is anonymous internet culture — intimate, unfiltered, slightly transgressive. The interface should feel like reading secrets left in a public bathroom stall, not like a university admin portal. No NUS branding. This project has its own identity.
+Campus-casual and honest, presented like a well-made modern product. The voice stays student-built (plain, a little irreverent); the interface is clean and calm so the confessions carry the personality.
 
 ### Aesthetic Direction
-**Dark.** People browse anonymous confessions at night, in private, not on a bright university portal. A dimly-lit, focused aesthetic is right for the context.
+**Clean modern product** (chosen Nov 2026, replacing the earlier dark zine look). Bar: Linear / Vercel dashboard craft.
 
-**Content-first.** The confession text is the product. Every pixel of UI chrome must justify its presence. Cards, headers, badges, and stats are all in service of getting the reader to the text — not the other way around.
+- Neutral zinc surfaces, one indigo accent (`--blue` token, kept for historical reasons). Accent marks links, data and focus; active controls invert to ink (`--ink` / `--on-ink`) rather than turning purple.
+- Light and dark are both first-class; default follows the system.
+- Geist for UI and headings, Geist Mono for numerals and axis labels.
+- One container: `.panel` (hairline border, 14px radius, near-invisible shadow). No nested cards, no uppercase tracked kickers.
+- Icons are inline SVG (`components/Icons.tsx`), not emoji.
+- Charts are hand-drawn SVG in `components/charts/`, single hue, hover + table view, no chart library.
 
-**Anti-references**: corporate dashboards, SaaS admin panels, university portals, the standard "rounded card + badge + emoji metrics" template.
-
-**References**: underground zines, anonymous forums (old 4chan layout, not modern Reddit), confessional ephemera, physical notice boards with pinned notes.
-
-**No NUS blue/orange.** Build a fresh palette. Something that reads late at night, on a phone, in a dark room.
+**No NUS blue/orange.**
 
 ### Design Principles
-1. **Text is the hero** — confession excerpts must be visually dominant; metadata is secondary
-2. **Compression over decoration** — every element removed is a confession better read
-3. **Anonymous intimacy** — the interface should feel private and slightly transgressive, not institutional
-4. **Ruthless hierarchy** — one primary signal per card (the confession), one secondary signal (engagement), everything else tertiary or hidden
-5. **Dark by nature** — not dark as a style choice but dark as a contextual truth: this is night-time, private, anonymous browsing
+1. **Text is the hero**: confession excerpts dominate; metadata is secondary.
+2. **Compression over decoration**: every element removed is a confession better read.
+3. **Honest data**: state time zones, flag partial/provisional periods, never imply precision the data lacks.
+4. **Ruthless hierarchy**: one primary signal per card (the confession), one secondary (engagement), everything else tertiary.

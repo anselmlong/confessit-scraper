@@ -8,8 +8,12 @@ export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
 };
 
-// Mobile browser chrome blends into the (always dark) nav bar
-export const viewport: Viewport = { themeColor: '#1a1612' };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,18 +22,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
       <body>
         <script dangerouslySetInnerHTML={{ __html: `
-          console.log('%c confessit ', 'background:#080808;color:#e2553f;font-family:monospace;font-size:13px;padding:2px 6px;border-radius:3px;');
-          console.log('%c scraped from telegram. built out of curiosity. ', 'color:#8c826e;font-size:11px;font-family:monospace;');
+          console.log('%c confessit ', 'background:#09090b;color:#8b93f8;font-family:monospace;font-size:13px;padding:2px 6px;border-radius:3px;');
+          console.log('%c scraped from telegram. built out of curiosity. ', 'color:#8e8e98;font-size:11px;font-family:monospace;');
         `}} />
         <ThemeProvider>
           {children}
-          <footer className="text-center py-6 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <footer className="max-w-5xl mx-auto mt-4 px-4 py-8 text-center text-xs border-t" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
             NUSConfessIT Dashboard &middot; Data from{' '}
             <a
               href="https://t.me/NUSConfessIT"

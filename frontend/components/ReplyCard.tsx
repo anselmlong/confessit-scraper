@@ -1,3 +1,4 @@
+import { HeartIcon, UpIcon, DownIcon } from './Icons';
 import type { Reply } from '@/lib/types';
 import { tgMdToHtml } from '@/lib/markdown';
 import { formatShortDate } from '@/lib/date';
@@ -25,9 +26,9 @@ export function ReplyCard({ reply, index }: { reply: Reply; index: number }) {
       />
       <div className="mt-1.5 md:mt-2 text-[0.7rem] md:text-[0.74rem] flex gap-2 md:gap-3" style={{ color: 'var(--text-muted)' }}>
         <time dateTime={reply.date || undefined}>{formatShortDate(reply.date ?? '')}</time>
-        {(reply.reactions_up ?? 0) > 0 && <span><span aria-hidden="true">👍</span> {reply.reactions_up}<span className="sr-only"> upvotes</span></span>}
-        {(reply.reactions_down ?? 0) > 0 && <span><span aria-hidden="true">👎</span> {reply.reactions_down}<span className="sr-only"> downvotes</span></span>}
-        {(reply.reactions_count ?? 0) > 0 && <span><span aria-hidden="true">❤️</span> {reply.reactions_count}<span className="sr-only"> reactions</span></span>}
+        {(reply.reactions_up ?? 0) > 0 && <span className="inline-flex items-center gap-1"><UpIcon /> {reply.reactions_up}<span className="sr-only"> upvotes</span></span>}
+        {(reply.reactions_down ?? 0) > 0 && <span className="inline-flex items-center gap-1"><DownIcon /> {reply.reactions_down}<span className="sr-only"> downvotes</span></span>}
+        {(reply.reactions_count ?? 0) > 0 && <span className="inline-flex items-center gap-1"><HeartIcon /> {reply.reactions_count}<span className="sr-only"> reactions</span></span>}
       </div>
     </div>
   );
