@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { HeartIcon, ReplyIcon } from '@/components/Icons';
 import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { ReplyCard } from '@/components/ReplyCard';
@@ -44,8 +45,8 @@ export default async function PostPage({ params }: Props) {
           </Link>
           <span aria-hidden="true" className="max-sm:hidden" style={{ color: 'var(--text-muted)' }}>·</span>
           <time dateTime={post.date || undefined}>{formatConfessionDate(post.date || '')}</time>
-          <span><span aria-hidden="true">❤️</span> <strong style={{ color: 'var(--text-2)' }}>{post.reactions_count}</strong><span className="sr-only"> reactions</span></span>
-          {post.reply_count > 0 && <span><span aria-hidden="true">💬</span> <strong style={{ color: 'var(--text-2)' }}>{post.reply_count}</strong><span className="sr-only"> replies</span></span>}
+          <span className="inline-flex items-center gap-1"><HeartIcon /> <strong style={{ color: 'var(--text-2)' }}>{post.reactions_count}</strong><span className="sr-only"> reactions</span></span>
+          {post.reply_count > 0 && <span className="inline-flex items-center gap-1"><ReplyIcon /> <strong style={{ color: 'var(--text-2)' }}>{post.reply_count}</strong><span className="sr-only"> replies</span></span>}
           <a href={tgUrl} target="_blank" rel="noopener noreferrer"
              className="no-underline py-2.5 -my-2.5 hover:opacity-70 transition-opacity ml-auto" style={{ color: 'var(--text-muted)' }}>
             Telegram <span aria-hidden="true">↗</span><span className="sr-only">(opens in new tab)</span>
@@ -61,8 +62,8 @@ export default async function PostPage({ params }: Props) {
           <h1 className="sr-only">Confession #{id}</h1>
         )}
 
-        <div className="reading-zone reading-zone-entry rounded-xl p-4 md:p-6 shadow-sm mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
-             style={{ background: 'var(--surface)', color: 'var(--text-1)' }}
+        <div className="reading-zone reading-zone-entry panel p-5 md:p-7 mb-5 md:mb-7 text-[0.95rem] md:text-[1rem] leading-[1.75] md:leading-[1.85]"
+             style={{ color: 'var(--text-1)' }}
              dangerouslySetInnerHTML={{ __html: html }} />
 
         {replies.length > 0 ? (
@@ -86,7 +87,7 @@ export default async function PostPage({ params }: Props) {
             ))}
           </section>
         ) : (
-          <div className="rounded-xl p-5 shadow-sm text-center" style={{ background: 'var(--surface)' }}>
+          <div className="panel p-5 text-center">
             <p className="text-[0.92rem] py-4" style={{ color: 'var(--text-muted)' }}>
               No discussion captured — the full thread is on{' '}
               <a href={tgUrl} target="_blank" rel="noopener noreferrer"

@@ -26,7 +26,7 @@ Tone: warm but not saccharine. Confident but not corporate. The kind of tool a s
 
 ## Anti-references
 
-- **Generic SaaS dashboards** (Metabase, Grafana, Datadog): too enterprise, too grey, too many config panels. This is a reading experience, not an ops tool.
+- **Enterprise BI dashboards** (Metabase, Grafana, Datadog): too many config panels and widgets. The look can be clean and modern; the job stays a reading experience, not an ops tool.
 - **Social media analytics platforms** (Sprout Social, Hootsuite, Buffer): too marketing-flavored, optimisation-obsessed. We're not helping anyone grow an audience.
 - **NUS official web properties** (nus.edu.sg, LumiNUS): institutional, stiff, color-by-committee. The confessions channel exists precisely because students needed somewhere unofficial.
 

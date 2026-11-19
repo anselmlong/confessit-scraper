@@ -64,14 +64,14 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
   };
 
   const pillBase =
-    'text-[0.75rem] md:text-[0.81rem] font-semibold px-2 md:px-3 py-1 md:py-1.5 rounded-full border-[1.5px] no-underline ' +
+    'text-[0.75rem] md:text-[0.81rem] font-semibold px-2 md:px-3 py-1 md:py-1.5 rounded-full border no-underline ' +
     'pointer-coarse:min-h-10 pointer-coarse:px-3 transition-colors cursor-pointer whitespace-nowrap';
-  const pillActive = 'text-[var(--on-fill)] border-[var(--fill)] bg-[var(--fill)]';
+  const pillActive = 'text-[var(--on-ink)] border-[var(--ink)] bg-[var(--ink)]';
   const pillInactive =
-    'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]';
+    'text-[var(--text-2)] border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-muted)] hover:text-[var(--text-1)]';
 
   return (
-    <div className="rounded-xl p-4 md:p-5 shadow-sm mb-4 md:mb-5" style={{ background: 'var(--surface)' }} aria-busy={isPending}>
+    <div className="panel p-4 md:p-5 mb-4 md:mb-5" aria-busy={isPending}>
       {/* Search */}
       <form
         onSubmit={e => {
@@ -83,7 +83,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
         role="search"
       >
         <div
-          className="flex rounded-lg border-[1.5px] overflow-hidden shrink-0"
+          className="flex rounded-lg border overflow-hidden shrink-0"
           style={{ borderColor: 'var(--border)' }}
           role="group"
           aria-label="Search mode"
@@ -96,7 +96,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
               aria-pressed={mode === m}
               className="px-3 py-2 md:py-2.5 pointer-coarse:min-h-11 text-[0.75rem] md:text-[0.78rem] font-semibold border-none cursor-pointer transition-colors"
               style={mode === m
-                ? { background: 'var(--fill)', color: 'var(--on-fill)' }
+                ? { background: 'var(--surface-mid)', color: 'var(--text-1)' }
                 : { background: 'transparent', color: 'var(--text-3)' }}
             >
               {m === 'keyword' ? 'Keyword' : 'Semantic'}
@@ -110,7 +110,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
           defaultValue={q}
           aria-label={mode === 'semantic' ? 'Describe what you’re looking for' : 'Search confessions'}
           placeholder={mode === 'semantic' ? 'Describe what you’re looking for…' : 'Search confessions…'}
-          className="search-input flex-1 min-w-0 px-3 md:px-4 py-2 md:py-2.5 pointer-coarse:min-h-11 rounded-lg text-[0.85rem] md:text-[0.92rem] border-[1.5px] font-[inherit]"
+          className="search-input flex-1 min-w-0 px-3 md:px-4 py-2 md:py-2.5 pointer-coarse:min-h-11 rounded-lg text-[0.85rem] md:text-[0.92rem] border font-[inherit]"
           style={{
             background: 'var(--surface)',
             color: 'var(--text-1)',
@@ -121,7 +121,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
           type="submit"
           className="shrink-0 px-4 md:px-5 py-2 md:py-2.5 pointer-coarse:min-h-11 rounded-lg font-semibold text-[0.82rem] md:text-[0.88rem] border-none cursor-pointer
                      transition-transform hover:-translate-y-px active:translate-y-px"
-          style={{ background: 'var(--fill)', color: 'var(--on-fill)' }}
+          style={{ background: 'var(--ink)', color: 'var(--on-ink)' }}
         >
           Search
         </button>
@@ -130,7 +130,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             type="button"
             onClick={() => navigate({ q: '' })}
             aria-label="Clear search"
-            className="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full flex items-center justify-center text-xs border-[1.5px] shrink-0
+            className="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-lg flex items-center justify-center text-xs border shrink-0
                        cursor-pointer transition-colors hover:border-[var(--text-2)] hover:text-[var(--text-1)]"
             style={{
               borderColor: 'var(--border)',
@@ -225,7 +225,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             onChange={e => commitDate('start_date', e.target.value, start_date)}
             onBlur={e => commitDate('start_date', e.target.value, start_date)}
             aria-label="From date"
-            className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border-[1.5px] font-[inherit]"
+            className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border font-[inherit]"
             style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
           />
           <span className="text-[0.78rem]" aria-hidden="true" style={{ color: 'var(--text-muted)' }}>→</span>
@@ -236,7 +236,7 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
             onChange={e => commitDate('end_date', e.target.value, end_date)}
             onBlur={e => commitDate('end_date', e.target.value, end_date)}
             aria-label="To date"
-            className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border-[1.5px] font-[inherit]"
+            className="search-input px-3 py-1.5 pointer-coarse:py-2 rounded-lg text-[0.82rem] border font-[inherit]"
             style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
           />
         </div>
@@ -271,10 +271,10 @@ export function FilterBar({ sort, range, n, q, order, mode, start_date, end_date
               onClick={() => navigate({ n: val })}
               aria-pressed={n === val}
               aria-label={`Show ${val} posts`}
-              className={`text-[0.72rem] md:text-[0.78rem] px-2 md:px-3 py-1 md:py-1.5 pointer-coarse:min-h-10 pointer-coarse:min-w-11 rounded-xl border-[1.5px] cursor-pointer transition-colors
+              className={`text-[0.72rem] md:text-[0.78rem] px-2 md:px-3 py-1 md:py-1.5 pointer-coarse:min-h-10 pointer-coarse:min-w-11 rounded-lg border cursor-pointer transition-colors
                 ${n === val
-                  ? 'text-[var(--on-fill)] border-[var(--fill)] bg-[var(--fill)]'
-                  : 'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--blue)] hover:text-[var(--blue)]'}`}
+                  ? 'text-[var(--on-ink)] border-[var(--ink)] bg-[var(--ink)]'
+                  : 'text-[var(--text-2)] border-[var(--border)] hover:border-[var(--text-muted)] hover:text-[var(--text-1)]'}`}
             >
               {val}
             </button>

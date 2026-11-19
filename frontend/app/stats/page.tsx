@@ -1,8 +1,27 @@
-export const revalidate = 3600; // re-render at most once per hour
-
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
-import { getStats, getMonthlyCounts, getLandscape, getInsights, getCopypastas } from '@/lib/api';
+import { TimelineExplorer } from '@/components/charts/TimelineExplorer';
+import { ShareRows } from '@/components/charts/ShareRows';
+import { getStats, getLandscape, getInsights, getCopypastas, getTimeline, getTermTrends, getCategoryTrends } from '@/lib/api';
+import { formatShortDate } from '@/lib/date';
+import type { TimelineSpan } from '@/lib/types';
+
+const SPANS: { key: TimelineSpan; label: string }[] = [
+  { key: '30d', label: '30 days' },
+  { key: '90d', label: '90 days' },
+  { key: '1y', label: '1 year' },
+  { key: 'all', label: 'All time' },
+];
+const DEFAULT_TERMS = ['exam', 'chatgpt', 'crush'];
+const TERM_IDEAS = ['exam, recess', 'chatgpt', 'crush, situationship', 'hall, rc', 'internship, job', 'tinder, hinge'];
+
+function statsHref(span: TimelineSpan, terms: string) {
+  const p = new URLSearchParams();
+  if (span !== 'all') p.set('span', span);
+  if (terms) p.set('terms', terms);
+  const q = p.toString();
+  return `/stats${q ? `?${q}` : ''}#activity`;
+}
 
 /* ── Helpers ───────────────────────────────────────── */
 
@@ -14,21 +33,25 @@ function fmt(n: number): string {
 
 function OverviewStat({ val, lbl }: { val: string; lbl: string }) {
   return (
-    <div className="rounded-lg p-3 md:p-4 text-center last:max-sm:col-span-2"
-         style={{ background: 'var(--surface-alt)' }}>
-      <div className="text-xl md:text-2xl font-black tabular-nums" style={{ color: 'var(--blue)', fontFamily: 'var(--font-display)' }}>{val}</div>
-      <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>{lbl}</div>
+    <div className="px-4 py-3.5 md:px-5 md:py-4 border-[var(--border)] max-sm:[&:nth-child(odd)]:border-r max-sm:[&:nth-child(n+3)]:border-t sm:[&:not(:first-child)]:border-l max-sm:[&:nth-child(5)]:col-span-2">
+      <div className="text-[0.74rem]" style={{ color: 'var(--text-muted)' }}>{lbl}</div>
+      <div className="text-xl md:text-2xl font-semibold tracking-[-0.03em] tabular-nums mt-0.5" style={{ color: 'var(--text-1)' }}>{val}</div>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ id, title, desc, actions, children }: {
+  id?: string; title: string; desc?: React.ReactNode; actions?: React.ReactNode; children: React.ReactNode;
+}) {
   return (
-    <section className="rounded-xl p-5 shadow-sm mb-5" style={{ background: 'var(--surface)' }}>
-      <h2 className="text-[0.72rem] font-semibold uppercase tracking-widest mb-4"
-          style={{ color: 'var(--text-muted)' }}>
-        {title}
-      </h2>
+    <section id={id} className="panel p-5 md:p-6 mb-5 scroll-mt-20">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 mb-4">
+        <div className="min-w-0 max-w-2xl">
+          <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em] m-0" style={{ color: 'var(--text-1)' }}>{title}</h2>
+          {desc && <p className="text-[0.86rem] leading-relaxed mt-1 mb-0" style={{ color: 'var(--text-3)' }}>{desc}</p>}
+        </div>
+        {actions}
+      </div>
       {children}
     </section>
   );
@@ -60,18 +83,6 @@ function TaxaTable({ regions }: { regions: Record<string, { size_pct: number; ke
   );
 }
 
-function MonthlyBar({ month, count, max }: { month: string; count: number; max: number }) {
-  return (
-    <div className="flex items-center gap-2.5 text-[0.78rem]">
-      <span className="w-14 text-right shrink-0" style={{ color: 'var(--text-3)' }}>{month}</span>
-      <div className="h-[22px] rounded-sm min-w-[2px]" style={{
-        width: `${(count / max) * 100}%`, background: 'var(--fill)',
-      }} />
-      <span className="tabular-nums" style={{ color: 'var(--text-3)', minWidth: '2rem' }}>{count}</span>
-    </div>
-  );
-}
-
 function BarRow({ label, value, maxVal, color }: { label: string; value: number | string; maxVal: number; color?: string }) {
   const numVal = typeof value === 'string' ? parseFloat(value) : value;
   const pct = maxVal > 0 ? (numVal / maxVal) * 100 : 0;
@@ -92,17 +103,28 @@ function BarRow({ label, value, maxVal, color }: { label: string; value: number 
 
 /* ── Page ───────────────────────────────────────────── */
 
-export default async function StatsPage() {
-  const [landscape, stats, monthly, insights, copypasta] = await Promise.all([
+export default async function StatsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ span?: string; terms?: string }>;
+}) {
+  const sp = await searchParams;
+  const span: TimelineSpan = SPANS.some(s => s.key === sp.span) ? (sp.span as TimelineSpan) : 'all';
+  const termsRaw = (sp.terms ?? '').trim();
+  const terms = (termsRaw ? termsRaw.split(',') : DEFAULT_TERMS).map(t => t.trim().toLowerCase()).filter(Boolean).slice(0, 4);
+
+  const [landscape, stats, insights, copypasta, timeline, termTrends, categoryTrends] = await Promise.all([
     getLandscape(),
     getStats(),
-    getMonthlyCounts(),
     getInsights(),
     getCopypastas(),
+    getTimeline(span),
+    getTermTrends(terms),
+    getCategoryTrends(),
   ]);
 
   const regions = landscape?.cluster_taxonomy?.["4_main_regions"];
-  const maxMonthly = monthly.length > 0 ? Math.max(...monthly.map(m => m.cnt), 1) : 1;
+  const months = categoryTrends[0]?.series.map(p => p.month) ?? termTrends[0]?.series.map(p => p.month) ?? [];
 
   // Pre-compute max values for bar charts
   const maxFeatureBoost = insights?.feature_correlations
@@ -118,19 +140,107 @@ export default async function StatsPage() {
     <>
       <Nav activePage="stats" />
 
-      <main className="max-w-5xl mx-auto px-3 md:px-4 pb-12 md:pb-16 pt-4 md:pt-6 space-y-1">
-        <h1 className="sr-only">NUSConfessIT channel stats</h1>
+      <main className="max-w-5xl mx-auto px-4 pb-12 md:pb-16">
+        <header className="pt-4 pb-6 md:pt-8 md:pb-8">
+          <h1 className="text-[1.75rem] md:text-[2.25rem] font-semibold tracking-[-0.035em] leading-tight m-0" style={{ color: 'var(--text-1)' }}>
+            Trends &amp; stats
+          </h1>
+          <p className="text-[0.95rem] mt-2 mb-0 max-w-2xl" style={{ color: 'var(--text-3)' }}>
+            What NUS has been confessing, week by week
+            {stats && <> since {formatShortDate(stats.first_date)}. Updated hourly from the channel.</>}
+          </p>
+        </header>
+
         {stats && (
-          <Section title="Overview">
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 md:gap-3">
-              <OverviewStat val={stats.total.toLocaleString()} lbl="Total Posts" />
-              <OverviewStat val={fmt(stats.total_views ?? 0)} lbl="Total Views" />
-              <OverviewStat val={String(stats.avg_reactions ?? 0)} lbl="Avg Reactions" />
-              <OverviewStat val={(stats.days_active ?? 0).toLocaleString()} lbl="Days Active" />
-              <OverviewStat val={String(stats.avg_words ?? 0)} lbl="Avg Words" />
-            </div>
+          <div className="panel grid grid-cols-2 sm:grid-cols-5 mb-5 overflow-hidden">
+            <OverviewStat val={stats.total.toLocaleString()} lbl="Confessions" />
+            <OverviewStat val={fmt(stats.total_views ?? 0)} lbl="Views" />
+            <OverviewStat val={String(stats.avg_reactions ?? 0)} lbl="Avg reactions" />
+            <OverviewStat val={String(stats.avg_words ?? 0)} lbl="Avg words" />
+            <OverviewStat val={(stats.days_active ?? 0).toLocaleString()} lbl="Days tracked" />
+          </div>
+        )}
+
+        <Section
+          id="activity"
+          title="Activity over time"
+          desc="How much gets posted, and how hard it lands. Pins mark busy stretches and the posts everyone was talking about."
+          actions={
+            <nav aria-label="Time window" className="inline-flex p-0.5 rounded-lg border" style={{ borderColor: 'var(--border)', background: 'var(--surface-alt)' }}>
+              {SPANS.map(s => (
+                <Link key={s.key} href={statsHref(s.key, termsRaw)} scroll={false} aria-current={span === s.key ? 'true' : undefined}
+                      className="px-3 py-1 pointer-coarse:py-2 rounded-md text-[0.8rem] font-medium no-underline whitespace-nowrap transition-colors"
+                      style={span === s.key
+                        ? { background: 'var(--surface)', color: 'var(--text-1)', boxShadow: 'var(--shadow-1), 0 0 0 1px var(--border)' }
+                        : { color: 'var(--text-3)' }}>
+                  {s.label}
+                </Link>
+              ))}
+            </nav>
+          }
+        >
+          {timeline
+            ? <TimelineExplorer key={span} data={timeline} />
+            : <p className="text-[0.88rem] py-8 text-center" style={{ color: 'var(--text-muted)' }}>The timeline is unavailable right now. Try again in a minute.</p>}
+        </Section>
+
+        <Section
+          id="words"
+          title="Word trends"
+          desc={<>Share of each month&rsquo;s confessions that mention a word. Compare up to four, separated by commas. Each row is scaled to its own peak.</>}
+        >
+          <form action="/stats" method="get" className="flex flex-wrap gap-2 mb-3">
+            {span !== 'all' && <input type="hidden" name="span" value={span} />}
+            <label htmlFor="terms" className="sr-only">Words to compare</label>
+            <input
+              id="terms" name="terms" defaultValue={terms.join(', ')} placeholder="exam, crush, chatgpt"
+              className="search-input flex-1 min-w-[14rem] px-3 py-2 pointer-coarse:min-h-11 rounded-lg text-[0.9rem] border font-[inherit]"
+              style={{ background: 'var(--surface)', color: 'var(--text-1)', borderColor: 'var(--border)' }}
+            />
+            <button type="submit" className="px-4 py-2 pointer-coarse:min-h-11 rounded-lg font-medium text-[0.86rem] border-none cursor-pointer"
+                    style={{ background: 'var(--ink)', color: 'var(--on-ink)' }}>
+              Compare
+            </button>
+          </form>
+          <div className="flex flex-wrap items-center gap-1.5 mb-5 text-[0.76rem]" style={{ color: 'var(--text-muted)' }}>
+            <span className="mr-1">Try</span>
+            {TERM_IDEAS.map(t => (
+              <Link key={t} href={`${statsHref(span, t.replace(/\s/g, ''))}`.replace('#activity', '#words')} scroll={false}
+                    className="px-2 py-0.5 pointer-coarse:py-1.5 rounded-md border no-underline transition-colors hover:text-[var(--text-1)] hover:border-[var(--text-muted)]"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}>
+                {t}
+              </Link>
+            ))}
+          </div>
+          <ShareRows
+            rows={termTrends.map(t => ({ label: t.term, total: t.total, series: t.series, peak: t.peak }))}
+            months={months}
+            linkTerms
+            emptyNote="Word trends are unavailable right now."
+          />
+        </Section>
+
+        {categoryTrends.length > 0 && (
+          <Section
+            id="categories"
+            title="Category mix"
+            desc="Share of each month’s confessions by the hashtag they were filed under. Each row is scaled to its own range, so a small category’s swings look as large as a big one’s."
+          >
+            <ShareRows
+              rows={categoryTrends.map(c => ({
+                label: c.category,
+                total: c.total,
+                series: c.series,
+                summary: `${Math.round((c.total / Math.max(categoryTrends.reduce((n, x) => n + x.total, 0), 1)) * 1000) / 10}% of all posts`,
+              }))}
+              months={months}
+            />
           </Section>
         )}
+
+        <h2 className="text-[0.95rem] font-semibold tracking-[-0.01em] mt-10 mb-3 px-1" style={{ color: 'var(--text-3)' }}>
+          The analysis
+        </h2>
 
         {landscape?.score_distribution && (
           <Section title="Score Distribution">
@@ -230,7 +340,7 @@ export default async function StatsPage() {
         {insights && (
           <Section title="Best Time to Post">
             <p className="text-[0.88rem] leading-relaxed mb-3" style={{ color: 'var(--text-2)' }}>
-              Average score by time of day and day of week.
+              Average score by time of day and day of week. Hours are in UTC (Singapore is UTC+8).
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -330,37 +440,16 @@ export default async function StatsPage() {
           </Section>
         )}
 
-        {monthly.length > 0 && (
-          <Section title="Monthly Activity">
-            <img src="/blog/monthly_activity.png" width={1780} height={735} loading="lazy" decoding="async" alt="Line chart of confessions posted per month" className="chart-img w-full h-auto rounded-lg mb-3" style={{ background: 'var(--surface)' }} />
-            <div className="space-y-2">
-              {monthly.map(m => (<MonthlyBar key={m.month} month={m.month} count={m.cnt} max={maxMonthly} />))}
-            </div>
-          </Section>
-        )}
-
         {copypasta?.clusters?.length > 0 && (
           <Section title="Copypasta Watch">
             <p className="text-[0.88rem] leading-relaxed mb-4" style={{ color: 'var(--text-2)' }}>
               Repeated templates and copypastas circulating in the channel. <strong>{copypasta.exact_duplicates.total_duplicate_posts.toLocaleString()} posts</strong> ({copypasta.exact_duplicates.unique_texts} unique texts) are exact duplicates — <strong>{copypasta.exact_duplicates.pct_of_all_posts}%</strong> of all confessions.
             </p>
-            <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
-              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
-                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.clusters.length}</div>
-                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Copypasta Templates</div>
-              </div>
-              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
-                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.exact_duplicates.unique_texts}</div>
-                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Unique Repeated Texts</div>
-              </div>
-              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
-                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.exact_duplicates.total_duplicate_posts.toLocaleString()}</div>
-                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Duplicate Posts</div>
-              </div>
-              <div className="rounded-lg p-3 text-center" style={{ background: 'var(--surface-alt)' }}>
-                <div className="text-xl font-black" style={{ color: 'var(--orange)', fontFamily: 'var(--font-display)' }}>{copypasta.exact_duplicates.pct_of_all_posts}%</div>
-                <div className="text-[0.7rem] uppercase tracking-wide mt-1" style={{ color: 'var(--text-3)' }}>Of All Posts</div>
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl border mb-4 overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+              <OverviewStat val={String(copypasta.clusters.length)} lbl="Templates" />
+              <OverviewStat val={copypasta.exact_duplicates.unique_texts.toLocaleString()} lbl="Unique repeated texts" />
+              <OverviewStat val={copypasta.exact_duplicates.total_duplicate_posts.toLocaleString()} lbl="Duplicate posts" />
+              <OverviewStat val={`${copypasta.exact_duplicates.pct_of_all_posts}%`} lbl="Of all posts" />
             </div>
             <div className="space-y-2">
               {copypasta.clusters.map((c: any) => (
@@ -368,8 +457,8 @@ export default async function StatsPage() {
                    className="list-row flex items-start gap-2.5 px-2 py-2.5 no-underline rounded-lg"
                    style={{ color: 'var(--text-1)' }}>
                   <div className="flex flex-col items-center gap-0.5 w-14 shrink-0 mt-0.5">
-                    <span className="text-base font-black leading-none tabular-nums" style={{ color: 'var(--orange)' }}>{c.count}</span>
-                    <span className="text-[0.6rem] uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>posts</span>
+                    <span className="text-base font-semibold leading-none tabular-nums" style={{ color: 'var(--text-1)' }}>{c.count}</span>
+                    <span className="text-[0.66rem]" style={{ color: 'var(--text-muted)' }}>posts</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">

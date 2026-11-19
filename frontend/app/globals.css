@@ -2,52 +2,62 @@
 
 @layer base {
   :root {
-    --bg:           #f0ebe0;
-    --surface:      #faf7f0;
-    --surface-alt:  #f5f0e5;
-    --surface-mid:  #e8e2d6;
-    --text-1:       #1a1612;
-    --text-2:       #4a4438;
-    --text-3:       #5e5547;
-    --text-muted:   #6f6354;
-    --border:       #d8d0c0;
-    --border-light: #e8e2d6;
-    --blue:         #b81c10;
-    --blue-mid:     #d42016;
-    --blue-light:   #f5e0de;
-    /* Solid accent fill behind white text (pills, buttons, bars) */
-    --fill:         #b81c10;
+    /* Neutral zinc scale, one indigo accent. Accent marks links, data and focus;
+       active controls invert to ink instead of turning the page purple. */
+    --bg:           #fafafa;
+    --surface:      #ffffff;
+    --surface-alt:  #f4f4f5;
+    --surface-mid:  #e4e4e7;
+    --text-1:       #09090b;
+    --text-2:       #3f3f46;
+    --text-3:       #52525b;
+    --text-muted:   #6b6b74;
+    --border:       #e4e4e7;
+    --border-light: #f0f0f2;
+    --blue:         #4f46e5;
+    --blue-mid:     #6366f1;
+    --blue-light:   #eef2ff;
+    --fill:         #4f46e5;
     --on-fill:      #ffffff;
-    --orange:       #8a6020;
+    --orange:       #c2410c;
     --on-orange:    #ffffff;
-    --mark-bg:      #f5e8c0;
-    --nav-bg:       #1a1612;
+    --mark-bg:      #fef3c7;
+    --nav-bg:       rgb(250 250 250 / 0.82);
+    --ink:          #09090b;
+    --on-ink:       #fafafa;
+    --hatch:        rgb(9 9 11 / 0.14);
+    --shadow-1:     0 1px 2px rgb(9 9 11 / 0.04), 0 1px 1px rgb(9 9 11 / 0.03);
+    --shadow-2:     0 8px 24px -6px rgb(9 9 11 / 0.12), 0 2px 6px rgb(9 9 11 / 0.05);
     color-scheme: light;
-    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
+    --font-mono:    "Geist Mono", ui-monospace, SFMono-Regular, monospace;
   }
 
   .dark {
-    /* Surfaces: near-neutral black — no warm tint, no "designed dark" feel */
-    --bg:           #080808;
-    --surface:      #0f0f0e;
-    --surface-alt:  #141412;
-    --surface-mid:  #1c1a16;
-    /* Text: warmth lives here, not in the backgrounds */
-    --text-1:       #e8e0ca;
-    --text-2:       #9a8e78;
-    --text-3:       #8f846f;
-    --text-muted:   #8c826e;
-    --border:       #2a2620;
-    --border-light: #141210;
-    --blue:         #e2553f;
-    --blue-mid:     #b83325;
-    --blue-light:   #200c08;
-    --fill:         #b83325;
+    --bg:           #09090b;
+    --surface:      #111113;
+    --surface-alt:  #18181b;
+    --surface-mid:  #27272a;
+    --text-1:       #fafafa;
+    --text-2:       #d4d4d8;
+    --text-3:       #a1a1aa;
+    --text-muted:   #8e8e98;
+    --border:       #27272a;
+    --border-light: #1d1d20;
+    --blue:         #8b93f8;
+    --blue-mid:     #6366f1;
+    --blue-light:   #1e1b4b;
+    --fill:         #4f46e5;
     --on-fill:      #ffffff;
-    --orange:       #c08018;
-    --on-orange:    #0a0806;
-    --mark-bg:      #2e2008;
-    --nav-bg:       #040402;
+    --orange:       #fb923c;
+    --on-orange:    #0a0a0a;
+    --mark-bg:      #4a3410;
+    --nav-bg:       rgb(9 9 11 / 0.78);
+    --ink:          #fafafa;
+    --on-ink:       #09090b;
+    --hatch:        rgb(250 250 250 / 0.16);
+    --shadow-1:     0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-2:     0 12px 32px -8px rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
 
@@ -60,7 +70,9 @@
   body {
     background: var(--bg);
     color: var(--text-1);
-    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
     line-height: 1.6;
     transition: background-color 0.22s ease, color 0.22s ease;
   }
@@ -76,6 +88,16 @@
   }
 
   input::placeholder { color: var(--text-3); opacity: 1; }
+
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* The one container: hairline border, barely-there lift */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-1);
+  }
 
   /* Matplotlib charts are rendered on white; dim them so they don't glare at night */
   html.dark .chart-img { filter: brightness(0.82) contrast(1.05); }
@@ -119,28 +141,6 @@
     to   { opacity: 1;   transform: translateY(0); }
   }
 
-  /* Dark mode: subtle grain so surfaces read as physical, not digital */
-  html.dark::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9000;
-    opacity: 0.028;
-    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-    background-size: 200px 200px;
-  }
-
-  /* Dark mode cards: warm paper text against stark border */
-  html.dark .confession-card {
-    box-shadow: inset 0 0 0 0.5px var(--border);
-  }
-
-  html.dark .confession-card:hover {
-    border-color: var(--text-3) !important;
-    box-shadow: inset 0 0 0 0.5px var(--text-3), 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-
   /* Card hover: lean-in */
   .confession-card {
     transition: transform 0.18s cubic-bezier(0.25, 1, 0.5, 1),
@@ -148,24 +148,19 @@
                 box-shadow 0.18s ease;
   }
   .confession-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--text-3) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--text-3) 45%, var(--border)) !important;
+    box-shadow: var(--shadow-2);
   }
   .card-rank {
     transition: opacity 0.18s ease, transform 0.18s ease;
   }
-  .confession-card:hover .card-rank {
-    opacity: 0.4;
-    transform: scale(0.88);
-  }
+  .confession-card:hover .card-rank { color: var(--blue); }
   /* Colours live here, not inline, so :visited can reach them */
-  .card-rank  { background-color: var(--surface-mid); border-color: var(--surface-mid); }
-  .card-title { color: var(--blue); }
-  /* Read it already? Like a visited thread on an old forum: the title
-     loses its red and the rank empties to a ring. Unread stays loud. */
+  .card-rank  { color: var(--text-muted); }
+  .card-title { color: var(--text-1); }
+  /* Read it already? The title fades back so unread posts stand out. */
   .confession-link:visited .card-title { color: var(--text-3); }
-  .confession-link:visited .card-rank  { background-color: var(--surface); border-color: var(--border); }
   .card-excerpt {
     transition: color 0.18s ease;
   }
@@ -183,7 +178,7 @@
   .search-input:focus {
     outline: none;
     border-color: var(--blue) !important;
-    box-shadow: 0 0 0 3px var(--blue-light);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent);
   }
 
   /* Filter navigation in flight */

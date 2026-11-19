@@ -1,4 +1,4 @@
-import type { Post, Stats, MonthlyCount } from '@/lib/types';
+import type { Post, Stats, MonthlyCount, Timeline, TimelineSpan, TermTrend, CategoryTrend } from '@/lib/types';
 
 const API = process.env.NEXT_PUBLIC_VPS_API || '';
 
@@ -85,4 +85,21 @@ export async function getLandscape() {
 
 export async function getCopypastas() {
   return fetchJSON(`${API}/api/copypasta`, 3600);
+}
+
+/* ── Trends ── */
+
+export async function getTimeline(span: TimelineSpan): Promise<Timeline | null> {
+  return fetchJSON(`${API}/api/timeline?span=${span}`, 1800);
+}
+
+export async function getTermTrends(terms: string[]): Promise<TermTrend[]> {
+  if (!terms.length) return [];
+  const d = await fetchJSON(`${API}/api/terms?terms=${encodeURIComponent(terms.join(','))}`, 3600);
+  return d?.terms ?? [];
+}
+
+export async function getCategoryTrends(): Promise<CategoryTrend[]> {
+  const d = await fetchJSON(`${API}/api/categories`, 3600);
+  return d?.categories ?? [];
 }

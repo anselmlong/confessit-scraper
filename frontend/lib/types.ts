@@ -72,3 +72,60 @@ export interface CopypastaData {
     pct_of_all_posts: number;
   };
 }
+
+/* ── Trends ── */
+
+export type TimelineSpan = '30d' | '90d' | '1y' | 'all';
+
+export interface MomentPost {
+  id: number;
+  day: string;
+  score: number;
+  reactions: number;
+  replies: number;
+  excerpt: string;
+}
+
+export interface TimelineBucket {
+  start: string;
+  end: string;
+  count: number;
+  avg_score: number;
+  /** Still collecting reactions: engagement will rise. */
+  provisional: boolean;
+  /** Bucket runs past today: volume is incomplete. */
+  partial: boolean;
+  top: MomentPost[];
+}
+
+export interface Moment {
+  kind: 'spike' | 'viral';
+  start: string;
+  end: string;
+  ratio: number | null;
+  count: number | null;
+  post: MomentPost | null;
+}
+
+export interface Timeline {
+  span: TimelineSpan;
+  bucket: 'day' | 'week';
+  provisional_from: string;
+  series: TimelineBucket[];
+  moments: Moment[];
+}
+
+export interface SharePoint { month: string; count: number; share: number }
+
+export interface TermTrend {
+  term: string;
+  total: number;
+  peak: { month: string; share: number; count: number } | null;
+  series: (SharePoint & { total: number })[];
+}
+
+export interface CategoryTrend {
+  category: string;
+  total: number;
+  series: SharePoint[];
+}
